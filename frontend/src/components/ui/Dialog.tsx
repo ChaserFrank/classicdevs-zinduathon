@@ -32,7 +32,11 @@ export function Dialog({
           )}
         >
           <RadixDialog.Title className="pr-8 text-xl font-bold">{title}</RadixDialog.Title>
-          {description && <RadixDialog.Description className="mt-1 text-sm text-mist">{description}</RadixDialog.Description>}
+          {description && (
+            <RadixDialog.Description className="mt-1 text-sm text-mist">
+              {description}
+            </RadixDialog.Description>
+          )}
           <div className="mt-5">{children}</div>
           <RadixDialog.Close
             aria-label="Close"

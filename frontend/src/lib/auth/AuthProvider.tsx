@@ -14,9 +14,17 @@ import type { Me } from "@/lib/api/types";
 import { AuthContext, type AuthState } from "./auth-context";
 import { sessionEvents, tokens } from "./tokens";
 
-export function AuthProvider({ children, onSessionEnded }: { children: ReactNode; onSessionEnded?: (next: string) => void }) {
+export function AuthProvider({
+  children,
+  onSessionEnded,
+}: {
+  children: ReactNode;
+  onSessionEnded?: (next: string) => void;
+}) {
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState<AuthState["status"]>(() => (tokens.refresh() ? "loading" : "signed-out"));
+  const [status, setStatus] = useState<AuthState["status"]>(() =>
+    tokens.refresh() ? "loading" : "signed-out",
+  );
   const [user, setUser] = useState<Me | null>(null);
 
   const loadMe = useCallback(async () => {

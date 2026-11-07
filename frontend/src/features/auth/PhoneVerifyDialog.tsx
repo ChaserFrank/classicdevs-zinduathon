@@ -16,7 +16,13 @@ const RESEND_SECONDS = 60;
  * Verify a phone by SMS code: (optionally) set the number, send a 6-digit code, enter it.
  * SMS feedback is only ever sent to verified phones.
  */
-export function PhoneVerifyDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+export function PhoneVerifyDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const { user, refreshMe } = useAuth();
   const [phone, setPhone] = useState(user?.phone ? formatPhone(user.phone) : "");
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -86,7 +92,15 @@ export function PhoneVerifyDialog({ open, onOpenChange }: { open: boolean; onOpe
         <div className="space-y-4">
           <Field label="Phone number" hint="Kenyan numbers: 07…, 01… or +254…" error={error ?? undefined}>
             {({ id, describedBy, invalid }) => (
-              <Input id={id} aria-describedby={describedBy} invalid={invalid} type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <Input
+                id={id}
+                aria-describedby={describedBy}
+                invalid={invalid}
+                type="tel"
+                autoComplete="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
             )}
           </Field>
           <Button className="w-full" loading={busy} onClick={send}>

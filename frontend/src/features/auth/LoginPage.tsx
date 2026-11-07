@@ -34,7 +34,11 @@ export function LoginPage() {
       signIn(result);
       navigate(next ?? homeFor(result.user), { replace: true });
     } catch (e) {
-      setError(e instanceof ApiError && e.code === "invalid_credentials" ? "Email or password is incorrect." : userMessage(e));
+      setError(
+        e instanceof ApiError && e.code === "invalid_credentials"
+          ? "Email or password is incorrect."
+          : userMessage(e),
+      );
     }
   });
 
@@ -55,12 +59,26 @@ export function LoginPage() {
       <form onSubmit={onSubmit} noValidate className="space-y-4">
         <Field label="Email" error={formState.errors.email?.message}>
           {({ id, describedBy, invalid }) => (
-            <Input id={id} aria-describedby={describedBy} invalid={invalid} type="email" autoComplete="email" {...register("email")} />
+            <Input
+              id={id}
+              aria-describedby={describedBy}
+              invalid={invalid}
+              type="email"
+              autoComplete="email"
+              {...register("email")}
+            />
           )}
         </Field>
         <Field label="Password" error={formState.errors.password?.message}>
           {({ id, describedBy, invalid }) => (
-            <Input id={id} aria-describedby={describedBy} invalid={invalid} type="password" autoComplete="current-password" {...register("password")} />
+            <Input
+              id={id}
+              aria-describedby={describedBy}
+              invalid={invalid}
+              type="password"
+              autoComplete="current-password"
+              {...register("password")}
+            />
           )}
         </Field>
         <div className="flex justify-end">

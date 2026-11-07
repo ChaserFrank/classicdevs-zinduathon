@@ -19,7 +19,9 @@ type Start = {
 
 export async function startGithub(options: Start = {}): Promise<void> {
   const { next, ...query } = options;
-  const { authorizeUrl, state } = await unwrap(api.GET("/api/v1/auth/github/authorize", { params: { query } }));
+  const { authorizeUrl, state } = await unwrap(
+    api.GET("/api/v1/auth/github/authorize", { params: { query } }),
+  );
   try {
     sessionStorage.setItem(STATE_KEY, state);
     if (next) sessionStorage.setItem(NEXT_KEY, next);

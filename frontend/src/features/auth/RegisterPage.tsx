@@ -27,9 +27,9 @@ export const registerSchema = z
     fullName: z.string().trim().min(1, "Enter your name.").max(150),
     email: z.string().trim().email("Enter a valid email address."),
     password: z.string().min(8, "Use at least 8 characters."),
-    phone: z.string().trim().optional().default(""),
-    companyName: z.string().trim().max(120).optional().default(""),
-    jobTitle: z.string().trim().max(120).optional().default(""),
+    phone: z.string().trim(),
+    companyName: z.string().trim().max(120),
+    jobTitle: z.string().trim().max(120),
     consents: z.object({
       terms: z.boolean().refine((v) => v, "Accept the terms and privacy policy to continue."),
       emailFeedback: z.boolean(),
@@ -40,16 +40,34 @@ export const registerSchema = z
     if (v.role === "recruiter" && !v.companyName)
       ctx.addIssue({ code: "custom", path: ["companyName"], message: "Enter your company's name." });
     if (v.consents.smsFeedback && !v.phone)
-      ctx.addIssue({ code: "custom", path: ["phone"], message: "Add a phone number to get feedback by SMS." });
+      ctx.addIssue({
+        code: "custom",
+        path: ["phone"],
+        message: "Add a phone number to get feedback by SMS.",
+      });
     if (v.phone && !toE164(v.phone))
-      ctx.addIssue({ code: "custom", path: ["phone"], message: "Enter a valid phone number, e.g. 0712 345 678." });
+      ctx.addIssue({
+        code: "custom",
+        path: ["phone"],
+        message: "Enter a valid phone number, e.g. 0712 345 678.",
+      });
   });
 export type RegisterValues = z.infer<typeof registerSchema>;
 
 function RoleStep({ onPick }: { onPick: (role: RoleChoice) => void }) {
   const choices = [
-    { role: "job_seeker" as const, icon: Code2, title: "I'm looking for work", body: "Turn your public GitHub work into a skill card recruiters trust." },
-    { role: "recruiter" as const, icon: Briefcase, title: "I'm hiring", body: "Search developers by proven skill and send them feedback." },
+    {
+      role: "job_seeker" as const,
+      icon: Code2,
+      title: "I'm looking for work",
+      body: "Turn your public GitHub work into a skill card recruiters trust.",
+    },
+    {
+      role: "recruiter" as const,
+      icon: Briefcase,
+      title: "I'm hiring",
+      body: "Search developers by proven skill and send them feedback.",
+    },
   ];
   return (
     <div className="grid gap-4 sm:grid-cols-2">
@@ -99,7 +117,14 @@ function RegisterForm({ role, onChangeRole }: { role: RoleChoice; onChangeRole: 
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
-  const { register, handleSubmit, control, watch, setError: setFieldError, formState } = useForm<RegisterValues>({
+  const {
+    register,
+    handleSubmit,
+    control,
+    watch,
+    setError: setFieldError,
+    formState,
+  } = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       role,
@@ -134,7 +159,10 @@ function RegisterForm({ role, onChangeRole }: { role: RoleChoice; onChangeRole: 
       );
       signIn(result);
       // Job seekers who chose SMS verify their phone right away (the dashboard opens the dialog).
-      navigate(homeFor(result.user), { replace: true, state: { verifyPhone: values.consents.smsFeedback && !recruiter } });
+      navigate(homeFor(result.user), {
+        replace: true,
+        state: { verifyPhone: values.consents.smsFeedback && !recruiter },
+      });
     } catch (e) {
       if (e instanceof ApiError && e.fields) {
         Object.entries(e.fields).forEach(([field, messages]) =>
@@ -151,7 +179,9 @@ function RegisterForm({ role, onChangeRole }: { role: RoleChoice; onChangeRole: 
       title={recruiter ? "Create a recruiter account" : "Create your skill card"}
       subtitle={
         <>
-          {recruiter ? "An admin approves recruiter accounts before you can search." : "Free. We only ever read public repositories."}{" "}
+          {recruiter
+            ? "An admin approves recruiter accounts before you can search."
+            : "Free. We only ever read public repositories."}{" "}
           <button type="button" onClick={onChangeRole} className="text-flare-hot hover:underline">
             Change
           </button>
@@ -175,36 +205,89 @@ function RegisterForm({ role, onChangeRole }: { role: RoleChoice; onChangeRole: 
             onError={setError}
           />
           <p className="mt-2 text-center text-xs text-mist">
-            By continuing with GitHub you accept the <Link to="/terms" className="underline">terms</Link> and{" "}
-            <Link to="/privacy" className="underline">privacy policy</Link>.
+            By continuing with GitHub you accept the{" "}
+            <Link to="/terms" className="underline">
+              terms
+            </Link>{" "}
+            and{" "}
+            <Link to="/privacy" className="underline">
+              privacy policy
+            </Link>
+            .
           </p>
           <Divider label="or with email" />
         </>
       )}
       <form onSubmit={onSubmit} noValidate className="space-y-4">
         <Field label="Full name" error={err.fullName?.message}>
-          {({ id, describedBy, invalid }) => <Input id={id} aria-describedby={describedBy} invalid={invalid} autoComplete="name" {...register("fullName")} />}
+          {({ id, describedBy, invalid }) => (
+            <Input
+              id={id}
+              aria-describedby={describedBy}
+              invalid={invalid}
+              autoComplete="name"
+              {...register("fullName")}
+            />
+          )}
         </Field>
         <Field label={recruiter ? "Work email" : "Email"} error={err.email?.message}>
           {({ id, describedBy, invalid }) => (
-            <Input id={id} aria-describedby={describedBy} invalid={invalid} type="email" autoComplete="email" {...register("email")} />
+            <Input
+              id={id}
+              aria-describedby={describedBy}
+              invalid={invalid}
+              type="email"
+              autoComplete="email"
+              {...register("email")}
+            />
           )}
         </Field>
-        <Field label="Password" error={err.password?.message} hint="At least 8 characters; avoid common passwords.">
+        <Field
+          label="Password"
+          error={err.password?.message}
+          hint="At least 8 characters; avoid common passwords."
+        >
           {({ id, describedBy, invalid }) => (
             <>
-              <Input id={id} aria-describedby={describedBy} invalid={invalid} type="password" autoComplete="new-password" {...register("password")} />
+              <Input
+                id={id}
+                aria-describedby={describedBy}
+                invalid={invalid}
+                type="password"
+                autoComplete="new-password"
+                {...register("password")}
+              />
               <PasswordStrength value={password} />
             </>
           )}
         </Field>
         {recruiter && (
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Company" error={err.companyName?.message} hint="We reuse an existing company with the same name.">
-              {({ id, describedBy, invalid }) => <Input id={id} aria-describedby={describedBy} invalid={invalid} autoComplete="organization" {...register("companyName")} />}
+            <Field
+              label="Company"
+              error={err.companyName?.message}
+              hint="We reuse an existing company with the same name."
+            >
+              {({ id, describedBy, invalid }) => (
+                <Input
+                  id={id}
+                  aria-describedby={describedBy}
+                  invalid={invalid}
+                  autoComplete="organization"
+                  {...register("companyName")}
+                />
+              )}
             </Field>
             <Field label="Job title" error={err.jobTitle?.message}>
-              {({ id, describedBy, invalid }) => <Input id={id} aria-describedby={describedBy} invalid={invalid} autoComplete="organization-title" {...register("jobTitle")} />}
+              {({ id, describedBy, invalid }) => (
+                <Input
+                  id={id}
+                  aria-describedby={describedBy}
+                  invalid={invalid}
+                  autoComplete="organization-title"
+                  {...register("jobTitle")}
+                />
+              )}
             </Field>
           </div>
         )}
@@ -214,7 +297,14 @@ function RegisterForm({ role, onChangeRole }: { role: RoleChoice; onChangeRole: 
           hint="Kenyan numbers: 07…, 01… or +254…"
         >
           {({ id, describedBy, invalid }) => (
-            <Input id={id} aria-describedby={describedBy} invalid={invalid} type="tel" autoComplete="tel" {...register("phone")} />
+            <Input
+              id={id}
+              aria-describedby={describedBy}
+              invalid={invalid}
+              type="tel"
+              autoComplete="tel"
+              {...register("phone")}
+            />
           )}
         </Field>
         <div className="space-y-3 pt-1">
@@ -228,8 +318,14 @@ function RegisterForm({ role, onChangeRole }: { role: RoleChoice; onChangeRole: 
                 error={err.consents?.terms?.message}
                 label={
                   <>
-                    I accept the <Link to="/terms" className="text-flare-hot underline">terms</Link> and{" "}
-                    <Link to="/privacy" className="text-flare-hot underline">privacy policy</Link>
+                    I accept the{" "}
+                    <Link to="/terms" className="text-flare-hot underline">
+                      terms
+                    </Link>{" "}
+                    and{" "}
+                    <Link to="/privacy" className="text-flare-hot underline">
+                      privacy policy
+                    </Link>
                   </>
                 }
               />
@@ -239,7 +335,15 @@ function RegisterForm({ role, onChangeRole }: { role: RoleChoice; onChangeRole: 
             control={control}
             name="consents.emailFeedback"
             render={({ field }) => (
-              <Checkbox checked={field.value} onCheckedChange={field.onChange} label={recruiter ? "Email me about my account and candidates" : "Send me recruiter feedback by email"} />
+              <Checkbox
+                checked={field.value}
+                onCheckedChange={field.onChange}
+                label={
+                  recruiter
+                    ? "Email me about my account and candidates"
+                    : "Send me recruiter feedback by email"
+                }
+              />
             )}
           />
           <Controller
@@ -250,7 +354,11 @@ function RegisterForm({ role, onChangeRole }: { role: RoleChoice; onChangeRole: 
                 checked={field.value}
                 onCheckedChange={field.onChange}
                 label={recruiter ? "Text me about my approval" : "Send me recruiter feedback by SMS"}
-                description={field.value ? "From SkillProof. Reply STOP to opt out at any time; standard SMS opt-out applies." : undefined}
+                description={
+                  field.value
+                    ? "From SkillProof. Reply STOP to opt out at any time; standard SMS opt-out applies."
+                    : undefined
+                }
               />
             )}
           />

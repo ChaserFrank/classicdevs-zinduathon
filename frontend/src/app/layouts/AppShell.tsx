@@ -16,8 +16,8 @@ const NAV: Record<Role, { to: string; label: string; icon: typeof LayoutDashboar
     { to: "/app/jobs", label: "Jobs", icon: Briefcase },
     { to: "/app/settings", label: "Settings", icon: Settings },
   ],
-  recruiter: [],
-  admin: [],
+  recruiter: [{ to: "/recruiter", label: "Dashboard", icon: LayoutDashboard }],
+  admin: [{ to: "/admin", label: "Overview", icon: LayoutDashboard }],
 };
 
 /**
@@ -38,7 +38,7 @@ export function AppShell({ area }: { area: Role }) {
             <NavLink
               key={to}
               to={to}
-              end={to === "/app"}
+              end
               className={({ isActive }) =>
                 cn(
                   "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-mist transition hover:bg-white/5 hover:text-ink",
@@ -76,7 +76,7 @@ export function AppShell({ area }: { area: Role }) {
           <NavLink
             key={to}
             to={to}
-            end={to === "/app"}
+            end
             className={({ isActive }) =>
               cn(
                 "flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-[11px] text-mist",
