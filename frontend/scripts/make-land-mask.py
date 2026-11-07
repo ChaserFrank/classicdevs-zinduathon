@@ -28,7 +28,11 @@ def main() -> None:
     draw = ImageDraw.Draw(image)
     for feature in data["features"]:
         geometry = feature["geometry"]
-        polygons = geometry["coordinates"] if geometry["type"] == "MultiPolygon" else [geometry["coordinates"]]
+        polygons = (
+            geometry["coordinates"]
+            if geometry["type"] == "MultiPolygon"
+            else [geometry["coordinates"]]
+        )
         for polygon in polygons:
             outer, *holes = polygon
             draw.polygon([project(*p) for p in outer], fill=255)

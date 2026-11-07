@@ -3,6 +3,7 @@
 The capture is opaque (bloom post-processing renders to an opaque buffer), so we derive alpha from
 brightness: black space becomes transparent, the glow keeps its colour. Then crop to content.
 """
+
 from pathlib import Path
 
 from PIL import Image
@@ -22,7 +23,12 @@ for y in range(H):
             po[x, y] = (0, 0, 0, 0)
         else:
             k = 255 / max(a, 1)
-            po[x, y] = (min(255, int(r * k)), min(255, int(g * k)), min(255, int(b * k)), a)
+            po[x, y] = (
+                min(255, int(r * k)),
+                min(255, int(g * k)),
+                min(255, int(b * k)),
+                a,
+            )
 bbox = out.getchannel("A").getbbox()
 if bbox:
     out = out.crop(bbox)
