@@ -24,3 +24,6 @@ GITHUB_OAUTH_CLIENT_ID = "test-client-id"
 GITHUB_OAUTH_CLIENT_SECRET = "test-client-secret"  # noqa: S105
 GITHUB_OAUTH_REDIRECT_URI = "http://localhost:3000/auth/github/callback"
 SMS_DRY_RUN = True
+GITHUB_TOKEN = "test-github-token"  # noqa: S105
+ANALYSIS_FETCH_WORKERS = 1  # sequential: worker threads can't see the test transaction
+LLM_API_KEY = ""

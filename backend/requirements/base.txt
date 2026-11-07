@@ -16,4 +16,5 @@ python-json-logger==4.2.0
 cryptography==50.0.2
 phonenumbers==9.0.43
 requests==2.34.2
+anthropic==2.6.0
 python-dotenv==1.2.4

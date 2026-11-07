@@ -1,0 +1,40 @@
+{
+  "login": "brian-learns",
+  "name": null,
+  "note": "Early-career data learner: a three-week notebook project and two small tutorial apps, no tests or CI.",
+  "repos": [
+    {
+      "id": 601,
+      "name": "titanic-analysis",
+      "languages": {"Jupyter Notebook": 120000, "Python": 4000},
+      "commit_series": [{"start": "2026-08-01T18:00:00+00:00", "count": 12, "every_days": 2, "additions": 220, "deletions": 30}],
+      "tree": ["requirements.txt", "analysis.ipynb"],
+      "files": {"requirements.txt": "pandas\nnumpy>=1.26\nmatplotlib\n"},
+      "readme_size": 0
+    },
+    {
+      "id": 602,
+      "name": "todo-app",
+      "languages": {"JavaScript": 4000, "HTML": 1500, "CSS": 900},
+      "commits": [
+        {"sha": "td-1", "date": "2026-06-10T10:00:00+00:00", "additions": 300, "deletions": 0},
+        {"sha": "td-2", "date": "2026-06-10T11:00:00+00:00", "additions": 20, "deletions": 4}
+      ],
+      "tree": ["index.html", "app.js", "style.css"],
+      "readme_size": 50
+    },
+    {
+      "id": 603,
+      "name": "weather-app",
+      "languages": {"JavaScript": 3000, "HTML": 1200, "CSS": 800},
+      "commits": [
+        {"sha": "wa-1", "date": "2026-05-01T10:00:00+00:00", "additions": 90, "deletions": 0},
+        {"sha": "wa-2", "date": "2026-05-02T10:00:00+00:00", "additions": 40, "deletions": 10},
+        {"sha": "wa-3", "date": "2026-05-03T10:00:00+00:00", "additions": 30, "deletions": 5},
+        {"sha": "wa-4", "date": "2026-05-04T10:00:00+00:00", "additions": 25, "deletions": 5}
+      ],
+      "tree": ["index.html", "app.js"],
+      "readme_size": 400
+    }
+  ]
+}

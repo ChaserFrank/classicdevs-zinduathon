@@ -1,0 +1,10 @@
+{
+  "login": "forks-only",
+  "name": "Fork Collector",
+  "note": "Only forks and an empty repo: nothing original to analyse (no_public_repos).",
+  "repos": [
+    {"id": 701, "name": "react", "fork": true},
+    {"id": 702, "name": "django", "fork": true},
+    {"id": 703, "name": "notes", "size": 0}
+  ]
+}

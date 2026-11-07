@@ -47,6 +47,8 @@ LOCAL_APPS = [
     "apps.core",
     "apps.accounts",
     "apps.companies",
+    "apps.skills",
+    "apps.analysis",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -148,6 +150,20 @@ THRIVEWAVE_SMS_PATH = env_str("THRIVEWAVE_SMS_PATH", "/sms/send")
 THRIVEWAVE_WEBHOOK_SECRET = env_str("THRIVEWAVE_WEBHOOK_SECRET")
 
 DEFAULT_FROM_EMAIL = env_str("DEFAULT_FROM_EMAIL", "SkillProof <no-reply@skillproof.app>")
+
+# --- Analysis -------------------------------------------------------------------------------------
+GITHUB_TOKEN = env_str("GITHUB_TOKEN")  # fallback when the job seeker hasn't linked GitHub
+GITHUB_API_URL = "https://api.github.com"
+GITHUB_CACHE_TTL_HOURS = 24
+ANALYSIS_CACHE_HOURS = env_int("ANALYSIS_CACHE_HOURS", 24)  # reuse a recent completed analysis
+ANALYSIS_MAX_REPOS = env_int("ANALYSIS_MAX_REPOS", 15)
+ANALYSIS_COMMIT_SAMPLE = env_int("ANALYSIS_COMMIT_SAMPLE", 20)  # commit details per repo
+ANALYSIS_FETCH_WORKERS = env_int("ANALYSIS_FETCH_WORKERS", 5)  # repos fetched in parallel
+ANALYSIS_STALE_MINUTES = 15  # a queued/running analysis older than this is treated as dead
+LLM_PROVIDER = env_str("LLM_PROVIDER", "anthropic")
+LLM_API_KEY = env_str("LLM_API_KEY")
+LLM_MODEL = env_str("LLM_MODEL")
+LLM_TIMEOUT_SECONDS = 15
 
 # --- Internationalisation -------------------------------------------------------------------------
 LANGUAGE_CODE = "en-gb"

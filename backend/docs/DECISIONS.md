@@ -100,3 +100,51 @@ password, then sign everyone out of that account. Without this, the squatter cou
 
 The register form has one required checkbox for the terms and privacy policy, stored as two
 `ConsentRecord` rows. Feedback-by-email and feedback-by-SMS consents default to false (opt-in).
+
+## D-018 Synthetic GitHub fixtures until a token is available (Phase 3)
+
+The brief asks for recorded responses from three real accounts. Recording needs a `GITHUB_TOKEN`
+(60 unauthenticated requests/hour is not enough for one account). Until then, pipeline tests run on
+three persona fixtures in `tests/fixtures/github/personas/`, expanded into GitHub's exact response
+shapes (pagination and `Link` headers included). `scripts/record_fixtures.py` records real
+accounts into `recordings/` in replayable form once a token is set.
+
+## D-019 Commit sampling is per repo; user commits capped at 300 per repo (Phase 3)
+
+`ANALYSIS_COMMIT_SAMPLE=20` is read per repo, because the iteration and flag rules are per repo.
+That is up to 300 detail requests for 15 repos (within the 5,000/hour token limit, cached by ETag).
+User commits are paged up to 3 × 100; total counts use the `per_page=1` + `rel="last"` trick.
+
+## D-020 Manifests one directory deep (Phase 3)
+
+Monorepos keep `package.json` in `frontend/` or `backend/`. We read manifests at the root and one
+level down (max 5 per repo, skipping `node_modules/`, `vendor/`, `dist/`, `build/`, virtualenvs).
+
+## D-021 Rounding is half-up everywhere (Phase 3)
+
+Sub-scores and evidence round half up (10.5 → 11, 0.015 → 0.02). Python's `round()` rounds halves
+to even and suffers float representation, which gave 0.01 for 0.015.
+
+## D-022 Analysis stores a profile snapshot and tips (Phase 3)
+
+`Analysis.github_name` and `avatar_url` snapshot the GitHub profile shown on the card. `tips` is a
+small JSON list of display text, derived on each run and never queried, so a JSON column is within
+the brief's rule (JSON only for data that is not queried or filtered).
+
+## D-023 One active analysis per login, enforced by the database (Phase 3)
+
+A partial unique constraint on `(github_login)` where status is queued/running backs up the 409
+check against double clicks and races. An analysis untouched for 15 minutes is marked failed
+(`timeout`) so a crashed worker can't block a login forever.
+
+## D-024 Public cards prefer job-seeker analyses (Phase 3)
+
+`/cards/{login}` returns the latest completed analysis owned by a job seeker if one exists, else
+the latest admin-run one (used for demo warm-up). Admin-run analyses only read public GitHub data.
+
+## D-025 Anthropic SDK for the summary, Claude Opus 5.5 by default (Phase 3)
+
+The official `anthropic` SDK (not raw HTTP) with model `claude-opus-5-5` unless `LLM_MODEL` says
+otherwise, effort `low` (a short, well-specified writing task), a 15 s timeout, one retry, and
+server-side refusal fallback (`fallbacks: "default"`). Only the Anthropic provider is implemented;
+the `SummaryProvider` protocol leaves room for another.

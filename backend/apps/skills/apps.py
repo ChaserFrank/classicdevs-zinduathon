@@ -1,0 +1,7 @@
+from django.apps import AppConfig
+
+
+class SkillsConfig(AppConfig):
+    name = "apps.skills"
+    label = "skills"
+    verbose_name = "Skills"

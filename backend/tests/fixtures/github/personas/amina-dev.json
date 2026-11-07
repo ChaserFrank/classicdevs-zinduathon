@@ -1,0 +1,42 @@
+{
+  "login": "amina-dev",
+  "name": "Amina Odhiambo",
+  "note": "Consistent full-stack developer: tested, CI'd TypeScript/React app, a Django API, one repo pushed in a single commit, a fork and an empty repo (both ignored).",
+  "repos": [
+    {
+      "id": 501,
+      "name": "shop-app",
+      "languages": {"TypeScript": 90000, "CSS": 6000, "HTML": 2000},
+      "commit_series": [{"start": "2026-01-05T09:00:00+00:00", "count": 44, "every_days": 7, "additions": 80, "deletions": 20}],
+      "total_commits": 48,
+      "tree": ["package.json", "src/app.tsx", "src/app.test.tsx", ".github/workflows/ci.yml", "Dockerfile", "README.md"],
+      "files": {"package.json": "{\"dependencies\": {\"react\": \"^18\", \"next\": \"14\", \"tailwindcss\": \"3\"}, \"devDependencies\": {\"jest\": \"29\"}}"},
+      "readme_size": 1800
+    },
+    {
+      "id": 502,
+      "name": "duka-api",
+      "languages": {"Python": 40000, "Shell": 300},
+      "commit_series": [{"start": "2026-02-02T09:00:00+00:00", "count": 24, "every_days": 10, "additions": 150, "deletions": 40}],
+      "total_commits": 30,
+      "tree": ["requirements.txt", "api/views.py", "tests/test_views.py", ".env.example"],
+      "files": {"requirements.txt": "Django==5.2\ndjangorestframework==3.16\npsycopg[binary]==3.2\npytest==8\n"},
+      "readme_size": 900
+    },
+    {
+      "id": 503,
+      "name": "matatu-routes",
+      "languages": {"JavaScript": 30000},
+      "commits": [
+        {"sha": "mr-1", "date": "2026-09-01T10:00:00+00:00", "additions": 2600, "deletions": 0},
+        {"sha": "mr-2", "date": "2026-09-01T12:00:00+00:00", "additions": 12, "deletions": 3},
+        {"sha": "mr-3", "date": "2026-09-02T08:00:00+00:00", "additions": 5, "deletions": 1}
+      ],
+      "tree": ["package.json", "index.js"],
+      "files": {"package.json": "{\"dependencies\": {\"express\": \"^4\"}}"},
+      "readme_size": 120
+    },
+    {"id": 504, "name": "awesome-list", "fork": true, "languages": {"Markdown": 10}},
+    {"id": 505, "name": "empty-idea", "size": 0}
+  ]
+}

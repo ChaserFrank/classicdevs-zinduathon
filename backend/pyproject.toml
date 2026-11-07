@@ -10,10 +10,13 @@ extend-exclude = [".venv", "staticfiles"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "DJ", "SIM", "S", "C4", "RUF"]
-ignore = ["RUF012"]  # DRF/Django class attributes (Meta.fields, permission_classes) are idiomatic
+ignore = [
+    "RUF012",  # DRF/Django class attributes (Meta.fields, permission_classes) are idiomatic
+    "RUF001", "RUF002", "RUF003",  # ×, −, – and … are intentional in formulas and user-facing text
+]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101", "S105", "S106"]  # asserts and dummy passwords are fine in tests
+"tests/**" = ["S101", "S105", "S106", "E501"]  # asserts, dummy passwords, long JSON literals
 "config/settings/*.py" = ["F405", "F403"]
 "**/migrations/**" = ["E501", "RUF"]
 
