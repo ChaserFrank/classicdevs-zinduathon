@@ -7,6 +7,1044 @@ info:
 
     Conventions: JSON with camelCase keys, `Authorization: Bearer <access token>`, page-number pagination (`?page=&pageSize=`), errors shaped `{code, message, fields?}`.
 paths:
+  /api/v1/admin/audit-log:
+    get:
+      operationId: admin_audit_log_list
+      summary: Audit log
+      parameters:
+      - in: query
+        name: action
+        schema:
+          type: string
+        description: Exact action or prefix ending in '.' (e.g. `auth.`)
+      - in: query
+        name: actor
+        schema:
+          type: string
+        description: Actor email (contains)
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: since
+        schema:
+          type: string
+        description: ISO 8601
+      - in: query
+        name: until
+        schema:
+          type: string
+        description: ISO 8601
+      tags:
+      - Admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AuditLog'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `permission_denied`'
+  /api/v1/admin/dependency-mappings:
+    get:
+      operationId: admin_dependency_mappings_list
+      summary: Dependency mappings
+      parameters:
+      - in: query
+        name: ecosystem
+        schema:
+          type: string
+      - in: query
+        name: page
+        schema:
+          type: integer
+      tags:
+      - Admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DependencyMapping'
+          description: ''
+    post:
+      operationId: admin_dependency_mappings_create
+      description: 'e.g. `{ecosystem: npm, packageName: svelte, skill: Svelte}`. Used
+        from the next analysis.'
+      summary: Map a package to a skill
+      tags:
+      - Admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DependencyMappingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DependencyMappingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DependencyMappingRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DependencyMapping'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ValidationError:
+                  value:
+                    code: validation_error
+                    message: …
+                  summary: validation_error
+          description: 'Bad request: `validation_error`'
+  /api/v1/admin/dependency-mappings/{ecosystem}/{package}:
+    patch:
+      operationId: admin_dependency_mappings_partial_update
+      summary: Change the skill a package maps to
+      parameters:
+      - in: path
+        name: ecosystem
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: package
+        schema:
+          type: string
+        required: true
+      tags:
+      - Admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDependencyMappingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDependencyMappingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDependencyMappingRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DependencyMapping'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
+  /api/v1/admin/feedback/{public_id}/reject:
+    post:
+      operationId: admin_feedback_reject_create
+      summary: Release (send) or reject held feedback
+      parameters:
+      - in: path
+        name: publicId
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HeldFeedback'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `permission_denied`'
+  /api/v1/admin/feedback/{public_id}/release:
+    post:
+      operationId: admin_feedback_release_create
+      summary: Release (send) or reject held feedback
+      parameters:
+      - in: path
+        name: publicId
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HeldFeedback'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `permission_denied`'
+  /api/v1/admin/feedback/held:
+    get:
+      operationId: admin_feedback_held_list
+      summary: Feedback held for review
+      tags:
+      - Admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HeldFeedback'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `permission_denied`'
+  /api/v1/admin/notification-deliveries:
+    get:
+      operationId: admin_notification_deliveries_list
+      summary: Notification deliveries
+      parameters:
+      - in: query
+        name: channel
+        schema:
+          type: string
+          enum:
+          - email
+          - sms
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: provider
+        schema:
+          type: string
+          enum:
+          - smtp
+          - thrivewave
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - delivered
+          - dry_run
+          - failed
+          - queued
+          - sent
+          - skipped
+      tags:
+      - Admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Delivery'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `permission_denied`'
+  /api/v1/admin/notification-deliveries/{public_id}/retry:
+    post:
+      operationId: admin_notification_deliveries_retry_create
+      description: Re-sends the originally rendered message (3 more attempts).
+      summary: Retry a failed delivery
+      parameters:
+      - in: path
+        name: publicId
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Delivery'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ValidationError:
+                  value:
+                    code: validation_error
+                    message: …
+                  summary: validation_error
+          description: 'Bad request: `validation_error`'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `permission_denied`'
+  /api/v1/admin/recruiters:
+    get:
+      operationId: admin_recruiters_list
+      summary: Recruiter approval queue
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - approved
+          - pending
+          - rejected
+          - suspended
+      tags:
+      - Admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecruiterQueue'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `permission_denied`'
+  /api/v1/admin/recruiters/{public_id}/approve:
+    post:
+      operationId: admin_recruiters_approve_create
+      description: Records the reviewer and note, audit-logs it and emails the recruiter
+        (SMS if opted in). Approval requires a verified email.
+      summary: Approve or reject a recruiter
+      parameters:
+      - in: path
+        name: publicId
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReviewRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReviewRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecruiterQueue'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `permission_denied`'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+  /api/v1/admin/recruiters/{public_id}/reject:
+    post:
+      operationId: admin_recruiters_reject_create
+      description: Records the reviewer and note, audit-logs it and emails the recruiter
+        (SMS if opted in). Approval requires a verified email.
+      summary: Approve or reject a recruiter
+      parameters:
+      - in: path
+        name: publicId
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReviewRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReviewRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecruiterQueue'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `permission_denied`'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+  /api/v1/admin/skills:
+    get:
+      operationId: admin_skills_list
+      summary: Skill catalogue (admin)
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+      tags:
+      - Admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminSkill'
+          description: ''
+    post:
+      operationId: admin_skills_create
+      description: 'Takes effect on the next analysis: no deploy needed.'
+      summary: Add a skill
+      tags:
+      - Admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminSkillRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AdminSkillRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AdminSkillRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminSkill'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ValidationError:
+                  value:
+                    code: validation_error
+                    message: …
+                  summary: validation_error
+          description: 'Bad request: `validation_error`'
+  /api/v1/admin/skills/{slug}:
+    patch:
+      operationId: admin_skills_partial_update
+      description: '`aliases`, when sent, replaces the list.'
+      summary: Edit a skill
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - Admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminSkillRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminSkillRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminSkillRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminSkill'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ValidationError:
+                  value:
+                    code: validation_error
+                    message: …
+                  summary: validation_error
+          description: 'Bad request: `validation_error`'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
+  /api/v1/admin/stats:
+    get:
+      operationId: admin_stats_retrieve
+      summary: Dashboard stats
+      tags:
+      - Admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stats'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `permission_denied`'
+  /api/v1/admin/users:
+    get:
+      operationId: admin_users_list
+      summary: Users
+      parameters:
+      - in: query
+        name: isActive
+        schema:
+          type: boolean
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: role
+        schema:
+          type: string
+          enum:
+          - admin
+          - job_seeker
+          - recruiter
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Email, name or GitHub login
+      tags:
+      - Admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminUser'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `permission_denied`'
+  /api/v1/admin/users/{public_id}:
+    get:
+      operationId: admin_users_retrieve
+      summary: User
+      parameters:
+      - in: path
+        name: publicId
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `permission_denied`'
+    patch:
+      operationId: admin_users_partial_update
+      description: '`isActive: false` suspends the account and signs it out everywhere.
+        A role change needs the matching profile (promoting to admin always works).
+        Admins can''t change their own account here.'
+      summary: Suspend, reactivate or change role
+      parameters:
+      - in: path
+        name: publicId
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminUserUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminUserUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminUserUpdateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ValidationError:
+                  value:
+                    code: validation_error
+                    message: …
+                  summary: validation_error
+          description: 'Bad request: `validation_error`'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `permission_denied`'
   /api/v1/analyses:
     get:
       operationId: analyses_list
@@ -1053,6 +2091,282 @@ paths:
                     message: …
                   summary: token_invalid
           description: 'Not signed in or token invalid: `token_invalid`'
+  /api/v1/candidates:
+    get:
+      operationId: candidates_list
+      description: Job seekers with a visible card and a completed analysis, by proven
+        skill. Every skill in `skills` must be at `minLabel` or above. No emails or
+        phone numbers.
+      summary: Search candidates
+      parameters:
+      - in: query
+        name: minLabel
+        schema:
+          type: string
+          enum:
+          - emerging
+          - moderate
+          - strong
+      - in: query
+        name: minScore
+        schema:
+          type: integer
+      - in: query
+        name: openToWork
+        schema:
+          type: boolean
+      - in: query
+        name: ordering
+        schema:
+          type: string
+          enum:
+          - -analysedAt
+          - -signalScore
+          - analysedAt
+          - signalScore
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: pageSize
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Name, headline, location or GitHub login
+      - in: query
+        name: skills
+        schema:
+          type: string
+        description: Comma-separated, e.g. `react,django`
+      tags:
+      - Candidates
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Candidate'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ValidationError:
+                  value:
+                    code: validation_error
+                    message: …
+                  summary: validation_error
+          description: 'Bad request: `validation_error`'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                RecruiterNotApproved:
+                  value:
+                    code: recruiter_not_approved
+                    message: …
+                  summary: recruiter_not_approved
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `recruiter_not_approved`, `permission_denied`'
+  /api/v1/candidates/{github_login}:
+    get:
+      operationId: candidates_retrieve
+      description: The skill card plus your shortlist entries and the feedback you
+        already sent. Counts as a profile view.
+      summary: Candidate card
+      parameters:
+      - in: path
+        name: githubLogin
+        schema:
+          type: string
+        required: true
+      tags:
+      - Candidates
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CandidateDetail'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                RecruiterNotApproved:
+                  value:
+                    code: recruiter_not_approved
+                    message: …
+                  summary: recruiter_not_approved
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `recruiter_not_approved`, `permission_denied`'
+  /api/v1/candidates/{github_login}/feedback:
+    post:
+      operationId: candidates_feedback_create
+      description: 'Creates the feedback and notifies the job seeker in-app, by email
+        and by SMS (per their preferences). HTML is stripped, max 1,000 characters,
+        only https links. Messages with abusive language are held for admin review
+        (`moderation: held`). Throttled to 30 per hour.'
+      summary: Send feedback to a candidate
+      parameters:
+      - in: path
+        name: githubLogin
+        schema:
+          type: string
+        required: true
+      tags:
+      - Feedback
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackCreateRequest'
+            examples:
+              Interview:
+                value:
+                  status: interview
+                  message: Loved your duka-api tests. Free for a call on Thursday?
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FeedbackCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FeedbackCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feedback'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ValidationError:
+                  value:
+                    code: validation_error
+                    message: …
+                  summary: validation_error
+          description: 'Bad request: `validation_error`'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                RateLimited:
+                  value:
+                    code: rate_limited
+                    message: …
+                  summary: rate_limited
+          description: 'Too many requests: `rate_limited`'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                RecruiterNotApproved:
+                  value:
+                    code: recruiter_not_approved
+                    message: …
+                  summary: recruiter_not_approved
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `recruiter_not_approved`, `permission_denied`'
   /api/v1/cards/{github_login}:
     get:
       operationId: cards_retrieve
@@ -1144,6 +2458,92 @@ paths:
                     message: …
                   summary: not_found
           description: 'Not found: `not_found`'
+  /api/v1/feedback:
+    get:
+      operationId: feedback_list
+      description: 'Job seekers: feedback received (held or rejected messages are
+        never shown). Recruiters: feedback sent.'
+      summary: My feedback
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: pageSize
+        schema:
+          type: integer
+      tags:
+      - Feedback
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Feedback'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `permission_denied`'
+  /api/v1/feedback/{public_id}/read:
+    post:
+      operationId: feedback_read_create
+      summary: Mark feedback read
+      parameters:
+      - in: path
+        name: publicId
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Feedback
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feedback'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
   /api/v1/health:
     get:
       operationId: health_retrieve
@@ -1178,6 +2578,359 @@ paths:
               schema:
                 $ref: '#/components/schemas/Health'
           description: ''
+  /api/v1/jobs:
+    get:
+      operationId: jobs_list
+      description: 'Recruiters: their company''s postings. Admins: all. Job seekers:
+        open postings.'
+      summary: Job postings
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - closed
+          - draft
+          - open
+      tags:
+      - Jobs
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Job'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                RecruiterNotApproved:
+                  value:
+                    code: recruiter_not_approved
+                    message: …
+                  summary: recruiter_not_approved
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `recruiter_not_approved`, `permission_denied`'
+    post:
+      operationId: jobs_create
+      summary: Create a job posting
+      tags:
+      - Jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobWriteRequest'
+            examples:
+              BackendRole:
+                value:
+                  title: Junior backend developer
+                  location: Nairobi
+                  remotePolicy: hybrid
+                  status: open
+                  requiredSkills:
+                  - skill: Python
+                    minimumLabel: moderate
+                    weight: 3
+                  - skill: drf
+                    minimumLabel: emerging
+                    weight: 2
+                  - skill: Testing
+                    minimumLabel: moderate
+                    weight: 1
+                summary: Backend role
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/JobWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/JobWriteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ValidationError:
+                  value:
+                    code: validation_error
+                    message: …
+                  summary: validation_error
+          description: 'Bad request: `validation_error`'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                RecruiterNotApproved:
+                  value:
+                    code: recruiter_not_approved
+                    message: …
+                  summary: recruiter_not_approved
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `recruiter_not_approved`, `permission_denied`'
+  /api/v1/jobs/{public_id}:
+    get:
+      operationId: jobs_retrieve
+      summary: Job posting
+      parameters:
+      - in: path
+        name: publicId
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Jobs
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
+    patch:
+      operationId: jobs_partial_update
+      description: Owner recruiter or admin. `requiredSkills`, when sent, replaces
+        the list.
+      summary: Edit a job posting
+      parameters:
+      - in: path
+        name: publicId
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedJobWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedJobWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedJobWriteRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ValidationError:
+                  value:
+                    code: validation_error
+                    message: …
+                  summary: validation_error
+          description: 'Bad request: `validation_error`'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
+    delete:
+      operationId: jobs_destroy
+      summary: Delete a job posting
+      parameters:
+      - in: path
+        name: publicId
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Jobs
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
+  /api/v1/jobs/{public_id}/match/me:
+    get:
+      operationId: jobs_match_me_retrieve
+      description: Your proven skills against the job's requirements, and what's missing.
+        No analysis yet → score 0, all missing.
+      summary: How well do I match this job?
+      parameters:
+      - in: path
+        name: publicId
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Jobs
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
+  /api/v1/jobs/{public_id}/matches:
+    get:
+      operationId: jobs_matches_list
+      description: Visible candidates ranked by match score (brief 8.7), then Signal
+        Score. Owner recruiter or admin.
+      summary: Ranked candidates for a job
+      parameters:
+      - in: query
+        name: minMatch
+        schema:
+          type: integer
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: pageSize
+        schema:
+          type: integer
+      - in: path
+        name: publicId
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Jobs
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CandidateMatch'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
   /api/v1/me:
     get:
       operationId: me_retrieve
@@ -1286,6 +3039,44 @@ paths:
                     message: …
                   summary: not_authenticated
           description: 'Not signed in or token invalid: `not_authenticated`'
+    delete:
+      operationId: me_destroy
+      description: Permanently deletes your account and personal data, and signs you
+        out everywhere. Send your password; accounts without one must have signed
+        in with GitHub in the last 10 minutes. Feedback you sent as a recruiter stays
+        with its recipient, anonymised. Admin accounts are removed by another admin.
+      summary: Delete my account
+      tags:
+      - Profile
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ValidationError:
+                  value:
+                    code: validation_error
+                    message: …
+                  summary: validation_error
+          description: 'Bad request: `validation_error`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `permission_denied`'
   /api/v1/me/claimed-skills:
     get:
       operationId: me_claimed_skills_retrieve
@@ -1387,6 +3178,464 @@ paths:
                     message: …
                   summary: permission_denied
           description: 'Not allowed: `permission_denied`'
+  /api/v1/me/export:
+    get:
+      operationId: me_export_retrieve
+      description: Everything SkillProof holds about you, as a JSON download (right
+        of access).
+      summary: Export my data
+      tags:
+      - Profile
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+  /api/v1/me/notification-preferences:
+    get:
+      operationId: me_notification_preferences_retrieve
+      description: Matrix of notification kind × channel for your role. SMS is only
+        sent when `smsReady` is true (verified phone and SMS consent).
+      summary: My notification preferences
+      tags:
+      - Notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreferenceMatrix'
+              examples:
+                JobSeeker:
+                  value:
+                    matrix:
+                      analysisCompleted:
+                        inApp: true
+                        email: true
+                        sms: false
+                      recruiterFeedback:
+                        inApp: true
+                        email: true
+                        sms: true
+                    smsReady: true
+                  summary: Job seeker
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+    put:
+      operationId: me_notification_preferences_update
+      description: Send only the cells you change. Turning SMS or email on for feedback
+        also records the matching consent (Kenya DPA); turning every SMS kind off
+        withdraws SMS consent.
+      summary: Change notification preferences
+      tags:
+      - Notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreferenceUpdateRequest'
+            examples:
+              FeedbackBySMS:
+                value:
+                  preferences:
+                  - kind: recruiter_feedback
+                    channel: sms
+                    enabled: true
+                summary: Feedback by SMS
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PreferenceUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PreferenceUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreferenceMatrix'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ValidationError:
+                  value:
+                    code: validation_error
+                    message: …
+                  summary: validation_error
+          description: 'Bad request: `validation_error`'
+  /api/v1/me/profile-views:
+    get:
+      operationId: me_profile_views_retrieve
+      description: Distinct recruiters who viewed your card, this week and per week
+        for 8 weeks. Names are never shown.
+      summary: Who's looking (counts only)
+      tags:
+      - Profile
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileViews'
+          description: ''
+  /api/v1/notifications:
+    get:
+      operationId: notifications_list
+      summary: My inbox
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: pageSize
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: unread
+        schema:
+          type: boolean
+        description: Only unread notifications
+      tags:
+      - Notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNotificationList'
+          description: ''
+  /api/v1/notifications/{public_id}/read:
+    post:
+      operationId: notifications_read_create
+      summary: Mark a notification read
+      parameters:
+      - in: path
+        name: publicId
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
+  /api/v1/notifications/read-all:
+    post:
+      operationId: notifications_read_all_create
+      summary: Mark all notifications read
+      tags:
+      - Notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadAll'
+          description: ''
+  /api/v1/shortlists:
+    get:
+      operationId: shortlists_list
+      summary: My shortlist
+      parameters:
+      - in: query
+        name: jobPostingId
+        schema:
+          type: string
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: stage
+        schema:
+          type: string
+      tags:
+      - Shortlists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Shortlist'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                RecruiterNotApproved:
+                  value:
+                    code: recruiter_not_approved
+                    message: …
+                  summary: recruiter_not_approved
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `recruiter_not_approved`, `permission_denied`'
+    post:
+      operationId: shortlists_create
+      summary: Shortlist a candidate
+      tags:
+      - Shortlists
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShortlistCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ShortlistCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShortlistCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shortlist'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ValidationError:
+                  value:
+                    code: validation_error
+                    message: …
+                  summary: validation_error
+          description: 'Bad request: `validation_error`'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                AlreadyShortlisted:
+                  value:
+                    code: already_shortlisted
+                    message: …
+                  summary: already_shortlisted
+          description: 'Conflict: `already_shortlisted`'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                RecruiterNotApproved:
+                  value:
+                    code: recruiter_not_approved
+                    message: …
+                  summary: recruiter_not_approved
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `recruiter_not_approved`, `permission_denied`'
+  /api/v1/shortlists/{public_id}:
+    patch:
+      operationId: shortlists_partial_update
+      description: '`notifyCandidate` tells the job seeker about the new stage (in-app,
+        email, SMS). `feedbackMessage` also sends feedback, e.g. when moving to interview.'
+      summary: Move stage or edit note
+      parameters:
+      - in: path
+        name: publicId
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Shortlists
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedShortlistUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedShortlistUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedShortlistUpdateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shortlist'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ValidationError:
+                  value:
+                    code: validation_error
+                    message: …
+                  summary: validation_error
+          description: 'Bad request: `validation_error`'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
+    delete:
+      operationId: shortlists_destroy
+      summary: Remove from shortlist
+      parameters:
+      - in: path
+        name: publicId
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Shortlists
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
   /api/v1/skills:
     get:
       operationId: skills_list
@@ -1430,8 +3679,169 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedSkillList'
           description: ''
+  /api/v1/webhooks/thrivewave/delivery:
+    post:
+      operationId: webhooks_thrivewave_delivery_create
+      description: Called by Thrivewave. Verified by `X-Thrivewave-Signature` (HMAC-SHA256
+        of the body with THRIVEWAVE_WEBHOOK_SECRET) or `X-Thrivewave-Secret`. Idempotent;
+        answers 200 quickly even for unknown message ids.
+      summary: Thrivewave delivery report (webhook)
+      tags:
+      - Notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAck'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `permission_denied`'
+  /api/v1/webhooks/thrivewave/inbound:
+    post:
+      operationId: webhooks_thrivewave_inbound_create
+      description: Replies of STOP (or UNSUBSCRIBE, END…) turn off every SMS preference
+        for the sender's number and record SMS consent as withdrawn. Other messages
+        are ignored.
+      summary: Thrivewave inbound SMS (webhook)
+      tags:
+      - Notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAck'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `permission_denied`'
 components:
   schemas:
+    AdminSkill:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 80
+        slug:
+          type: string
+          maxLength: 80
+          pattern: ^[-a-zA-Z0-9_]+$
+        category:
+          $ref: '#/components/schemas/SkillCategoryEnum'
+      required:
+      - category
+      - name
+    AdminSkillRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 80
+          pattern: ^[-a-zA-Z0-9_]+$
+        category:
+          $ref: '#/components/schemas/SkillCategoryEnum'
+        aliases:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 80
+          writeOnly: true
+      required:
+      - category
+      - name
+    AdminUser:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        fullName:
+          type: string
+          maxLength: 150
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        phone:
+          type: string
+          nullable: true
+          description: E.164, e.g. +254712345678
+          maxLength: 16
+        isActive:
+          type: boolean
+        emailVerified:
+          type: boolean
+          readOnly: true
+        phoneVerified:
+          type: boolean
+          readOnly: true
+        githubLogin:
+          type: string
+          nullable: true
+          readOnly: true
+        approvalStatus:
+          type: string
+          nullable: true
+          readOnly: true
+        company:
+          type: string
+          nullable: true
+          readOnly: true
+        lastLogin:
+          type: string
+          format: date-time
+          nullable: true
+        dateJoined:
+          type: string
+          format: date-time
+      required:
+      - approvalStatus
+      - company
+      - email
+      - emailVerified
+      - githubLogin
+      - id
+      - phoneVerified
     AnalysisCreateRequest:
       type: object
       properties:
@@ -1454,7 +3864,7 @@ components:
         githubLogin:
           type: string
         status:
-          $ref: '#/components/schemas/AnalysisDetailStatusEnum'
+          $ref: '#/components/schemas/AnalysisStatusEnum'
         progressStep:
           type: integer
           description: 1 reading repos · 2 reading commits · 3 finding skills · 4
@@ -1494,18 +3904,6 @@ components:
       - signalScore
       - status
       - tips
-    AnalysisDetailStatusEnum:
-      enum:
-      - queued
-      - running
-      - completed
-      - failed
-      type: string
-      description: |-
-        * `queued` - queued
-        * `running` - running
-        * `completed` - completed
-        * `failed` - failed
     AnalysisListItem:
       type: object
       properties:
@@ -1550,6 +3948,18 @@ components:
       required:
       - id
       - status
+    AnalysisStatusEnum:
+      enum:
+      - queued
+      - running
+      - completed
+      - failed
+      type: string
+      description: |-
+        * `queued` - queued
+        * `running` - running
+        * `completed` - completed
+        * `failed` - failed
     ApprovalStatusEnum:
       enum:
       - pending
@@ -1562,6 +3972,37 @@ components:
         * `approved` - Approved
         * `rejected` - Rejected
         * `suspended` - Suspended
+    AuditLog:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        actor:
+          type: string
+          nullable: true
+          readOnly: true
+        action:
+          type: string
+          maxLength: 64
+        targetType:
+          type: string
+          maxLength: 64
+        targetId:
+          type: string
+          maxLength: 64
+        metadata: {}
+        ipAddress:
+          type: string
+          nullable: true
+        userAgent:
+          type: string
+          maxLength: 512
+      required:
+      - action
+      - actor
+      - createdAt
     AuthResponse:
       type: object
       description: Same shape from register, login and the GitHub callback.
@@ -1576,6 +4017,97 @@ components:
       - access
       - refresh
       - user
+    Candidate:
+      type: object
+      properties:
+        githubLogin:
+          type: string
+        name:
+          type: string
+        headline:
+          type: string
+        location:
+          type: string
+        avatarUrl:
+          type: string
+        openToWork:
+          type: boolean
+        signalScore:
+          type: integer
+        analysedAt:
+          type: string
+          format: date-time
+        topSkills:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopSkill'
+      required:
+      - analysedAt
+      - avatarUrl
+      - githubLogin
+      - headline
+      - location
+      - name
+      - openToWork
+      - signalScore
+      - topSkills
+    CandidateDetail:
+      type: object
+      properties:
+        candidate:
+          $ref: '#/components/schemas/Candidate'
+        card:
+          $ref: '#/components/schemas/Card'
+        shortlist:
+          type: array
+          items:
+            $ref: '#/components/schemas/Shortlist'
+        feedbackSent:
+          type: array
+          items:
+            $ref: '#/components/schemas/Feedback'
+      required:
+      - candidate
+      - card
+      - feedbackSent
+      - shortlist
+    CandidateMatch:
+      type: object
+      properties:
+        githubLogin:
+          type: string
+        name:
+          type: string
+        headline:
+          type: string
+        location:
+          type: string
+        avatarUrl:
+          type: string
+        openToWork:
+          type: boolean
+        signalScore:
+          type: integer
+        analysedAt:
+          type: string
+          format: date-time
+        topSkills:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopSkill'
+        match:
+          $ref: '#/components/schemas/Match'
+      required:
+      - analysedAt
+      - avatarUrl
+      - githubLogin
+      - headline
+      - location
+      - match
+      - name
+      - openToWork
+      - signalScore
+      - topSkills
     Card:
       type: object
       properties:
@@ -1833,6 +4365,112 @@ components:
           default: false
       required:
       - terms
+    Delivery:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        kind:
+          type: string
+        user:
+          type: string
+          format: email
+        channel:
+          $ref: '#/components/schemas/DeliveryChannelEnum'
+        provider:
+          $ref: '#/components/schemas/ProviderEnum'
+        recipient:
+          type: string
+          maxLength: 254
+        status:
+          $ref: '#/components/schemas/DeliveryStatusEnum'
+        attempts:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        lastError:
+          type: string
+          maxLength: 300
+        providerMessageId:
+          type: string
+          maxLength: 128
+        sentAt:
+          type: string
+          format: date-time
+          nullable: true
+        deliveredAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - channel
+      - createdAt
+      - id
+      - kind
+      - provider
+      - user
+    DeliveryChannelEnum:
+      enum:
+      - email
+      - sms
+      type: string
+      description: |-
+        * `email` - email
+        * `sms` - sms
+    DeliveryStatusEnum:
+      enum:
+      - queued
+      - sent
+      - delivered
+      - failed
+      - skipped
+      - dry_run
+      type: string
+      description: |-
+        * `queued` - Queued
+        * `sent` - Sent
+        * `delivered` - Delivered
+        * `failed` - Failed
+        * `skipped` - Skipped
+        * `dry_run` - Dry run
+    DependencyMapping:
+      type: object
+      properties:
+        ecosystem:
+          $ref: '#/components/schemas/EcosystemEnum'
+        packageName:
+          type: string
+          description: Normalised lowercase name
+          maxLength: 214
+        skill:
+          type: string
+      required:
+      - ecosystem
+      - packageName
+      - skill
+    DependencyMappingRequest:
+      type: object
+      properties:
+        ecosystem:
+          $ref: '#/components/schemas/EcosystemEnum'
+        packageName:
+          type: string
+          minLength: 1
+          description: Normalised lowercase name
+          maxLength: 214
+        skill:
+          type: string
+          minLength: 1
+      required:
+      - ecosystem
+      - packageName
+      - skill
     DependencyStatusEnum:
       enum:
       - ok
@@ -1841,6 +4479,18 @@ components:
       description: |-
         * `ok` - ok
         * `down` - down
+    EcosystemEnum:
+      enum:
+      - npm
+      - pypi
+      - go
+      - maven
+      type: string
+      description: |-
+        * `npm` - npm
+        * `pypi` - PyPI
+        * `go` - Go modules
+        * `maven` - Maven
     EmailRequest:
       type: object
       properties:
@@ -1850,6 +4500,18 @@ components:
           minLength: 1
       required:
       - email
+    EmploymentTypeEnum:
+      enum:
+      - full_time
+      - part_time
+      - contract
+      - internship
+      type: string
+      description: |-
+        * `full_time` - Full-time
+        * `part_time` - Part-time
+        * `contract` - Contract
+        * `internship` - Internship
     Error:
       type: object
       description: The error shape every endpoint returns (documented once, referenced
@@ -1871,6 +4533,81 @@ components:
       required:
       - code
       - message
+    Feedback:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/FeedbackStatusEnum'
+        message:
+          type: string
+          maxLength: 1000
+        company:
+          type: string
+        recruiterName:
+          type: string
+          readOnly: true
+        candidate:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          description: 'Only for the sender''s view: who the feedback was about.'
+          readOnly: true
+        jobPosting:
+          allOf:
+          - $ref: '#/components/schemas/JobRef'
+          nullable: true
+        moderation:
+          $ref: '#/components/schemas/ModerationEnum'
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - candidate
+      - company
+      - createdAt
+      - id
+      - jobPosting
+      - message
+      - recruiterName
+      - status
+    FeedbackCreateRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/FeedbackStatusEnum'
+        message:
+          type: string
+          minLength: 1
+          description: Max 1,000 characters after HTML is stripped
+          maxLength: 5000
+        jobPostingId:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - message
+      - status
+    FeedbackStatusEnum:
+      enum:
+      - shortlisted
+      - interview
+      - not_a_fit
+      - general
+      type: string
+      description: |-
+        * `shortlisted` - Shortlisted
+        * `interview` - Interview
+        * `not_a_fit` - Not a fit
+        * `general` - General
     GithubAccount:
       type: object
       properties:
@@ -1969,6 +4706,106 @@ components:
       description: |-
         * `ok` - ok
         * `degraded` - degraded
+    HeldFeedback:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        companyName:
+          type: string
+          description: Snapshot, so feedback reads correctly after changes
+          maxLength: 120
+        recruiter:
+          type: string
+          nullable: true
+          readOnly: true
+        jobSeeker:
+          type: string
+          format: email
+        status:
+          $ref: '#/components/schemas/FeedbackStatusEnum'
+        message:
+          type: string
+          maxLength: 1000
+        moderation:
+          $ref: '#/components/schemas/ModerationEnum'
+        heldReason:
+          type: string
+          maxLength: 200
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - companyName
+      - createdAt
+      - id
+      - jobSeeker
+      - message
+      - recruiter
+      - status
+    Job:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        company:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+        location:
+          type: string
+          maxLength: 120
+        employmentType:
+          $ref: '#/components/schemas/EmploymentTypeEnum'
+        remotePolicy:
+          $ref: '#/components/schemas/RemotePolicyEnum'
+        status:
+          $ref: '#/components/schemas/JobStatusEnum'
+        closesAt:
+          type: string
+          format: date-time
+          nullable: true
+        requiredSkills:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          readOnly: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - company
+      - createdAt
+      - id
+      - requiredSkills
+      - title
+      - updatedAt
+    JobRef:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+      required:
+      - id
+      - title
     JobSeekerProfile:
       type: object
       properties:
@@ -1983,6 +4820,54 @@ components:
           description: Recruiters can find and view this card.
         openToWork:
           type: boolean
+    JobStatusEnum:
+      enum:
+      - draft
+      - open
+      - closed
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `open` - Open
+        * `closed` - Closed
+    JobWriteRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+        description:
+          type: string
+        location:
+          type: string
+          maxLength: 120
+        employmentType:
+          allOf:
+          - $ref: '#/components/schemas/EmploymentTypeEnum'
+          default: full_time
+        remotePolicy:
+          allOf:
+          - $ref: '#/components/schemas/RemotePolicyEnum'
+          default: onsite
+        status:
+          allOf:
+          - $ref: '#/components/schemas/JobStatusEnum'
+          default: draft
+        closesAt:
+          type: string
+          format: date-time
+          nullable: true
+        requiredSkills:
+          type: array
+          items:
+            $ref: '#/components/schemas/RequiredSkillRequest'
+        companyId:
+          type: string
+          format: uuid
+          description: Admins only
+      required:
+      - title
     LabelEnum:
       enum:
       - Strong
@@ -2009,6 +4894,31 @@ components:
       required:
       - email
       - password
+    Match:
+      type: object
+      properties:
+        score:
+          type: integer
+          maximum: 100
+          minimum: 0
+        met:
+          type: array
+          items:
+            type: string
+        partial:
+          type: array
+          items:
+            type: string
+          description: 'One level below: half credit'
+        missing:
+          type: array
+          items:
+            type: string
+      required:
+      - met
+      - missing
+      - partial
+      - score
     Me:
       type: object
       description: What the frontend needs after sign-in to route and render the account
@@ -2023,7 +4933,7 @@ components:
           format: email
           maxLength: 254
         role:
-          $ref: '#/components/schemas/MeRoleEnum'
+          $ref: '#/components/schemas/RoleEnum'
         fullName:
           type: string
           maxLength: 150
@@ -2068,16 +4978,98 @@ components:
       - jobSeekerProfile
       - phoneVerified
       - recruiterProfile
-    MeRoleEnum:
+    MinimumLabelEnum:
       enum:
-      - job_seeker
-      - recruiter
-      - admin
+      - emerging
+      - moderate
+      - strong
       type: string
       description: |-
-        * `job_seeker` - Job seeker
-        * `recruiter` - Recruiter
-        * `admin` - Admin
+        * `emerging` - emerging
+        * `moderate` - moderate
+        * `strong` - strong
+    ModerationEnum:
+      enum:
+      - sent
+      - held
+      - rejected
+      type: string
+      description: |-
+        * `sent` - Sent
+        * `held` - Held for review
+        * `rejected` - Rejected by admin
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        kind:
+          $ref: '#/components/schemas/NotificationKindEnum'
+        title:
+          type: string
+          maxLength: 200
+        body:
+          type: string
+        linkPath:
+          type: string
+          description: Path on FRONTEND_URL
+          maxLength: 200
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - createdAt
+      - id
+      - kind
+      - title
+    NotificationKindEnum:
+      enum:
+      - analysis_completed
+      - analysis_failed
+      - recruiter_feedback
+      - recruiter_approved
+      - recruiter_rejected
+      - shortlisted
+      - profile_viewed_digest
+      type: string
+      description: |-
+        * `analysis_completed` - Analysis completed
+        * `analysis_failed` - Analysis failed
+        * `recruiter_feedback` - Recruiter feedback
+        * `recruiter_approved` - Recruiter approved
+        * `recruiter_rejected` - Recruiter rejected
+        * `shortlisted` - Shortlisted
+        * `profile_viewed_digest` - Weekly profile views
+    PaginatedNotificationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
     PaginatedSkillList:
       type: object
       required:
@@ -2126,6 +5118,84 @@ components:
       required:
       - newPassword
       - token
+    PatchedAdminSkillRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 80
+          pattern: ^[-a-zA-Z0-9_]+$
+        category:
+          $ref: '#/components/schemas/SkillCategoryEnum'
+        aliases:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 80
+          writeOnly: true
+    PatchedAdminUserUpdateRequest:
+      type: object
+      properties:
+        isActive:
+          type: boolean
+          description: False suspends and signs the user out
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+    PatchedDependencyMappingRequest:
+      type: object
+      properties:
+        ecosystem:
+          $ref: '#/components/schemas/EcosystemEnum'
+        packageName:
+          type: string
+          minLength: 1
+          description: Normalised lowercase name
+          maxLength: 214
+        skill:
+          type: string
+          minLength: 1
+    PatchedJobWriteRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+        description:
+          type: string
+        location:
+          type: string
+          maxLength: 120
+        employmentType:
+          allOf:
+          - $ref: '#/components/schemas/EmploymentTypeEnum'
+          default: full_time
+        remotePolicy:
+          allOf:
+          - $ref: '#/components/schemas/RemotePolicyEnum'
+          default: onsite
+        status:
+          allOf:
+          - $ref: '#/components/schemas/JobStatusEnum'
+          default: draft
+        closesAt:
+          type: string
+          format: date-time
+          nullable: true
+        requiredSkills:
+          type: array
+          items:
+            $ref: '#/components/schemas/RequiredSkillRequest'
+        companyId:
+          type: string
+          format: uuid
+          description: Admins only
     PatchedMeUpdateRequest:
       type: object
       description: Flat PATCH body; fields are routed to the user or the role profile.
@@ -2150,6 +5220,20 @@ components:
         jobTitle:
           type: string
           maxLength: 120
+    PatchedShortlistUpdateRequest:
+      type: object
+      properties:
+        stage:
+          $ref: '#/components/schemas/ShortlistStageEnum'
+        note:
+          type: string
+          maxLength: 500
+        notifyCandidate:
+          type: boolean
+          default: false
+        feedbackMessage:
+          type: string
+          description: Also send feedback (e.g. when moving to interview)
     PhoneSendCodeRequest:
       type: object
       properties:
@@ -2180,6 +5264,112 @@ components:
           pattern: ^\s*\d{6}\s*$
       required:
       - code
+    PreferenceChangeChannelEnum:
+      enum:
+      - in_app
+      - email
+      - sms
+      type: string
+      description: |-
+        * `in_app` - in_app
+        * `email` - email
+        * `sms` - sms
+    PreferenceChangeKindEnum:
+      enum:
+      - analysis_completed
+      - analysis_failed
+      - recruiter_feedback
+      - recruiter_approved
+      - recruiter_rejected
+      - shortlisted
+      - profile_viewed_digest
+      type: string
+      description: |-
+        * `analysis_completed` - analysis_completed
+        * `analysis_failed` - analysis_failed
+        * `recruiter_feedback` - recruiter_feedback
+        * `recruiter_approved` - recruiter_approved
+        * `recruiter_rejected` - recruiter_rejected
+        * `shortlisted` - shortlisted
+        * `profile_viewed_digest` - profile_viewed_digest
+    PreferenceChangeRequest:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/PreferenceChangeKindEnum'
+        channel:
+          $ref: '#/components/schemas/PreferenceChangeChannelEnum'
+        enabled:
+          type: boolean
+      required:
+      - channel
+      - enabled
+      - kind
+    PreferenceMatrix:
+      type: object
+      properties:
+        matrix:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: boolean
+          description: kind → channel → enabled. Only kinds for your role and channels
+            that exist.
+        smsReady:
+          type: boolean
+          description: Phone verified and SMS consent given.
+      required:
+      - matrix
+      - smsReady
+    PreferenceUpdateRequest:
+      type: object
+      properties:
+        preferences:
+          type: array
+          items:
+            $ref: '#/components/schemas/PreferenceChangeRequest'
+      required:
+      - preferences
+    ProfileViewWeek:
+      type: object
+      properties:
+        weekStart:
+          type: string
+          format: date
+        recruiters:
+          type: integer
+      required:
+      - recruiters
+      - weekStart
+    ProfileViews:
+      type: object
+      properties:
+        thisWeek:
+          type: integer
+          description: Distinct recruiters in the last 7 days
+        weeks:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProfileViewWeek'
+      required:
+      - thisWeek
+      - weeks
+    ProviderEnum:
+      enum:
+      - smtp
+      - thrivewave
+      type: string
+      description: |-
+        * `smtp` - SMTP
+        * `thrivewave` - Thrivewave
+    ReadAll:
+      type: object
+      properties:
+        updated:
+          type: integer
+      required:
+      - updated
     RecruiterProfile:
       type: object
       properties:
@@ -2199,6 +5389,45 @@ components:
           nullable: true
       required:
       - company
+    RecruiterQueue:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        fullName:
+          type: string
+        emailVerified:
+          type: boolean
+        company:
+          type: string
+        jobTitle:
+          type: string
+        approvalStatus:
+          type: string
+        reviewNote:
+          type: string
+        reviewedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - approvalStatus
+      - company
+      - createdAt
+      - email
+      - emailVerified
+      - fullName
+      - id
+      - jobTitle
+      - reviewNote
+      - reviewedAt
     RefreshRequest:
       type: object
       properties:
@@ -2219,7 +5448,7 @@ components:
           writeOnly: true
           minLength: 1
         role:
-          $ref: '#/components/schemas/RegisterRoleEnum'
+          $ref: '#/components/schemas/SignupRoleEnum'
         fullName:
           type: string
           minLength: 1
@@ -2241,7 +5470,125 @@ components:
       - fullName
       - password
       - role
-    RegisterRoleEnum:
+    RemotePolicyEnum:
+      enum:
+      - onsite
+      - hybrid
+      - remote
+      type: string
+      description: |-
+        * `onsite` - On-site
+        * `hybrid` - Hybrid
+        * `remote` - Remote
+    RequiredSkillRequest:
+      type: object
+      properties:
+        skill:
+          type: string
+          minLength: 1
+          description: Name, slug or alias
+        minimumLabel:
+          allOf:
+          - $ref: '#/components/schemas/MinimumLabelEnum'
+          default: moderate
+        weight:
+          type: integer
+          maximum: 3
+          minimum: 1
+          default: 1
+      required:
+      - skill
+    ReviewRequest:
+      type: object
+      properties:
+        note:
+          type: string
+          default: ''
+          maxLength: 500
+    RoleEnum:
+      enum:
+      - job_seeker
+      - recruiter
+      - admin
+      type: string
+      description: |-
+        * `job_seeker` - Job seeker
+        * `recruiter` - Recruiter
+        * `admin` - Admin
+    Shortlist:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        candidate:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        jobPosting:
+          allOf:
+          - $ref: '#/components/schemas/JobRef'
+          nullable: true
+        stage:
+          $ref: '#/components/schemas/ShortlistStageEnum'
+        note:
+          type: string
+          description: Private to the recruiter
+          maxLength: 500
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - candidate
+      - createdAt
+      - id
+      - jobPosting
+      - updatedAt
+    ShortlistCreateRequest:
+      type: object
+      properties:
+        githubLogin:
+          type: string
+          minLength: 1
+        jobPostingId:
+          type: string
+          format: uuid
+          nullable: true
+        stage:
+          allOf:
+          - $ref: '#/components/schemas/ShortlistStageEnum'
+          default: saved
+        note:
+          type: string
+          default: ''
+          maxLength: 500
+        notifyCandidate:
+          type: boolean
+          default: false
+          description: Tell the job seeker (in-app, email, SMS)
+      required:
+      - githubLogin
+    ShortlistStageEnum:
+      enum:
+      - saved
+      - contacted
+      - interview
+      - offer
+      - rejected
+      type: string
+      description: |-
+        * `saved` - Saved
+        * `contacted` - Contacted
+        * `interview` - Interview
+        * `offer` - Offer
+        * `rejected` - Rejected
+    SignupRoleEnum:
       enum:
       - job_seeker
       - recruiter
@@ -2277,6 +5624,43 @@ components:
         * `framework` - Framework
         * `practice` - Practice
         * `tool` - Tool
+    Stats:
+      type: object
+      properties:
+        usersByRole:
+          type: object
+          additionalProperties:
+            type: integer
+        pendingRecruiters:
+          type: integer
+        analysesPerDay:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        averageSignalScore:
+          type: number
+          format: double
+          nullable: true
+        feedbackSent:
+          type: integer
+        feedbackHeld:
+          type: integer
+        deliveryRates:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties: {}
+          description: 'Per channel: total, ok (sent/delivered/dry run), failed, skipped,
+            rate'
+      required:
+      - analysesPerDay
+      - averageSignalScore
+      - deliveryRates
+      - feedbackHeld
+      - feedbackSent
+      - pendingRecruiters
+      - usersByRole
     SubScoreValue:
       type: object
       properties:
@@ -2308,6 +5692,16 @@ components:
           description: The token from the emailed link.
       required:
       - token
+    TopSkill:
+      type: object
+      properties:
+        name:
+          type: string
+        label:
+          type: string
+      required:
+      - label
+      - name
     TypeEnum:
       enum:
       - one_shot_dump
@@ -2320,6 +5714,15 @@ components:
         * `unexplained_bulk` - unexplained_bulk
         * `tutorial_clone` - tutorial_clone
         * `unverified_claim` - unverified_claim
+    WebhookAck:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        updated:
+          type: boolean
+      required:
+      - ok
   securitySchemes:
     jwtAuth:
       type: http

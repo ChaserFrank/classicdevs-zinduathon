@@ -157,8 +157,8 @@ def test_sample_is_deterministic():
 
 @responses.activate
 def test_fetch_profile_skips_forks_and_empty_repos():
-    register_persona(responses, load_persona("amina-dev"))
-    profile, repos = gh.fetch_profile(gh.GithubClient(), "amina-dev", workers=1)
+    register_persona(responses, load_persona("amina-demo"))
+    profile, repos = gh.fetch_profile(gh.GithubClient(), "amina-demo", workers=1)
     assert profile.name == "Amina Odhiambo"
     assert [r.name for r in repos] == ["shop-app", "duka-api", "matatu-routes"]
     shop = repos[0]
@@ -169,8 +169,8 @@ def test_fetch_profile_skips_forks_and_empty_repos():
 
 @responses.activate
 def test_fetch_profile_in_parallel_without_db_cache():
-    register_persona(responses, load_persona("brian-learns"))
-    _, repos = gh.fetch_profile(gh.GithubClient(), "brian-learns", workers=3)
+    register_persona(responses, load_persona("brian-demo"))
+    _, repos = gh.fetch_profile(gh.GithubClient(), "brian-demo", workers=3)
     assert sorted(r.name for r in repos) == ["titanic-analysis", "todo-app", "weather-app"]
 
 

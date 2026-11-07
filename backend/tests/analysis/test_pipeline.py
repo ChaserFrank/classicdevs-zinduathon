@@ -40,7 +40,7 @@ def test_amina_full_card():
             ).first(),
         )
 
-    analysis = run_for("amina-dev", job_seeker=profile)
+    analysis = run_for("amina-demo", job_seeker=profile)
 
     assert analysis.status == "completed", analysis.error_message
     assert analysis.progress_step == 4
@@ -76,7 +76,7 @@ def test_amina_full_card():
 
 
 def test_brian_tutorial_flags_and_low_quality():
-    analysis = run_for("brian-learns")
+    analysis = run_for("brian-demo")
     assert analysis.status == "completed"
     flags = dict(
         Flag.objects.filter(analysis=analysis).values_list(
@@ -123,17 +123,17 @@ def test_unexpected_crash_is_recorded(monkeypatch):
 def test_job_seekers_own_token_is_used(settings):
     from tests.factories import GithubAccountFactory
 
-    account = GithubAccountFactory(login="amina-dev")
+    account = GithubAccountFactory(login="amina-demo")
     account.set_token("gho_personal")
     account.save()
-    analysis = Analysis.objects.create(github_login="amina-dev")
+    analysis = Analysis.objects.create(github_login="amina-demo")
     assert pipeline._token_for(analysis) == "gho_personal"
     assert pipeline._token_for(Analysis(github_login="someone-else")) == settings.GITHUB_TOKEN
 
 
 def test_rerun_reuses_repository_rows():
-    first = run_for("brian-learns")
-    second = run_for("brian-learns")
+    first = run_for("brian-demo")
+    second = run_for("brian-demo")
     from apps.analysis.models import Repository
 
     assert Repository.objects.count() == 3

@@ -1,0 +1,15 @@
+{% autoescape off %}Hi {{ user.full_name|default:"there" }},
+
+Your SkillProof analysis of {{ login }} is ready.
+
+Signal Score: {{ score }} / 100
+{% if top_skills %}Top skills: {{ top_skills|join:", " }}{% endif %}
+{% if tips %}
+Three things that would raise it:
+{% for tip in tips %}- {{ tip }}
+{% endfor %}{% endif %}
+
+{% if link %}Open: {{ link }}
+
+{% endif %}--
+SkillProof. Change your notification settings in your account.{% endautoescape %}

@@ -148,3 +148,106 @@ The official `anthropic` SDK (not raw HTTP) with model `claude-opus-5-5` unless 
 otherwise, effort `low` (a short, well-specified writing task), a 15 s timeout, one retry, and
 server-side refusal fallback (`fallbacks: "default"`). Only the Anthropic provider is implemented;
 the `SummaryProvider` protocol leaves room for another.
+
+## D-026 Feedback FK on Notification arrives with the recruiting app (Phase 4)
+
+`notifications_notification.feedback` references `recruiting_feedback`, which is created in
+Phase 5. The column is added by a Phase 5 migration instead of creating an empty recruiting app
+early.
+
+## D-027 Rendered message stored on the Delivery (Phase 4)
+
+Email subject/text/HTML and the SMS text are rendered when the Delivery is created and kept in
+`provider_response["render"]`, next to the provider's raw reply. Retries (automatic or admin) send
+exactly what was first rendered, even if the template or data changed meanwhile. The Phase 6
+retention job clears old bodies.
+
+## D-028 Which emails need feedback consent (Phase 4)
+
+`analysis_failed`, `recruiter_approved` and `recruiter_rejected` are transactional (about the
+user's own account) and are emailed without `email_feedback` consent. Analysis results, recruiter
+feedback, shortlists and the digest need it. SMS always needs `sms_feedback` consent and a verified
+phone.
+
+## D-029 Retries without Celery's retry machinery (Phase 4)
+
+On a transient error the task records the attempt and re-queues itself with `apply_async`
+(30 s, 60 s). In eager mode (dev, tests) the re-run happens inline, so the 3-attempt behaviour is
+tested end to end. Celery's `self.retry()` raises inside eager runs, which made that harder.
+
+## D-030 SMTP error classes (Phase 4)
+
+`smtplib.SMTPException` subclasses `OSError`, so connection problems (`SMTPServerDisconnected`,
+`SMTPConnectError`, plain `OSError`/timeouts) are caught as transient first; other SMTP errors
+(recipient refused, data rejected) fail without retry.
+
+## D-031 Phone codes use the SMS adapter directly (Phase 4)
+
+Verification codes bypass preferences (brief 9.2) and are not stored as Delivery rows, so the code
+never lands in the database or logs. They still go through the same Thrivewave adapter and dry run.
+
+## D-032 Match score: no half credit for skills we found no evidence of (Phase 5)
+
+Brief 8.7 gives 0.5 credit "one level below" the minimum. A required skill the candidate doesn't
+show at all (absent or Unverified) earns 0 even when the minimum is Emerging; otherwise every
+candidate would get half credit for every Emerging requirement. Rounding is half-up like the rest.
+
+## D-033 Candidate search uses the latest completed analysis (Phase 5)
+
+Each job seeker is represented by their most recent completed analysis (correlated subquery);
+skill filters are `EXISTS` checks on `analysis_analysisskill (skill, label)`, so filtering and
+pagination happen in PostgreSQL. `/jobs/{id}/matches` scores visible candidates in Python, which is
+fine at hackathon scale; precomputing scores is the next step if the pool grows.
+
+## D-034 Feedback moderation: held, not rejected (Phase 5)
+
+HTML is stripped, 1,000 characters max, links must be https. Abusive language (a small
+English/Swahili word list) doesn't block the recruiter: the message is stored with
+`moderation=held`, not notified, and appears in Django admin where "release" sends it and "reject"
+keeps it unsent. Recruiters see the moderation state on their sent list; job seekers never see
+held or rejected messages. Feedback stores a `company_name` snapshot and survives the recruiter's
+account deletion (recruiter set to NULL).
+
+## D-035 Who may do what with jobs and shortlists (Phase 5)
+
+Recruiters of the same company can read each other's postings; only the creator (or an admin)
+edits or deletes. Job seekers see open postings only. Shortlists are private to the recruiter who
+made them. A shortlist entry is unique per (recruiter, job seeker, job), with a partial constraint
+covering "no job" because NULLs don't collide in a plain unique constraint.
+
+## D-036 Shortlist notifications are opt-in per action (Phase 5)
+
+Being saved to a shortlist is private. The job seeker hears about it only when the recruiter sets
+`notifyCandidate` (on create or a stage change), or sends `feedbackMessage` with a stage change
+(brief: "moving to interview can optionally send feedback").
+
+## D-037 Profile views are counted per recruiter per hour; job seekers see counts only (Phase 5)
+
+A view is recorded when an approved recruiter opens `/candidates/{login}` or the public card while
+signed in, at most once per recruiter per job seeker per hour. `/me/profile-views` returns distinct
+recruiters this week and per week for 8 weeks, never names.
+
+## D-038 Demo personas live in the app and run through the real pipeline (Phase 6)
+
+`seed_demo` must work on a fresh deploy without network access to GitHub. Six personas
+(`apps/analysis/demo_personas/`, fictional `*-demo` logins so no real account is implied) are
+served by `demo.ReplaySession`, so the cards are produced by the real rules, not hand-written
+numbers. Tests use the same route table through `responses`.
+
+## D-039 Demo data never sends email or SMS (Phase 6)
+
+`notifications.services.outbound_muted()` makes `notify()` create in-app notifications only and
+record email/SMS deliveries as skipped. `seed_demo` runs inside it, so a production seed can't
+email made-up addresses.
+
+## D-040 Admin API ids and extras (Phase 6)
+
+Deliveries got a `public_id` (three-step migration for existing rows). Dependency mappings are
+addressed by their natural key `{ecosystem}/{package}`; audit entries by filters only. Admins
+can't suspend or re-role themselves via the API, and can't self-delete (another admin removes
+them). Held feedback has API endpoints as well as Django admin actions.
+
+## D-041 Account deletion confirmation (Phase 6)
+
+Accounts with a password confirm with it. GitHub-only accounts confirm by having signed in within
+the last 10 minutes (the frontend sends them through GitHub sign-in again before deleting).

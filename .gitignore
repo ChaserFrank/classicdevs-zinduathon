@@ -11,7 +11,6 @@ htmlcov/
 
 # Secrets and local config
 .env
-!.env.example
 
 # Django
 backend/staticfiles/

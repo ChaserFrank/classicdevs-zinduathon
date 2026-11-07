@@ -33,12 +33,12 @@ REPO_KEYS = ["name", "url", "commits", "firstCommit", "lastCommit", "hasTests", 
 @pytest.fixture
 def card(api_client):
     with freeze_time("2026-11-07 12:00"):
-        analysis = Analysis.objects.create(github_login="amina-dev")
+        analysis = Analysis.objects.create(github_login="amina-demo")
         with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
-            register_persona(rsps, load_persona("amina-dev"))
+            register_persona(rsps, load_persona("amina-demo"))
             pipeline.run(analysis)
     # Through the real renderer: camel-casing must not turn hasCI into hasCi.
-    return api_client.get("/api/v1/cards/amina-dev").json()
+    return api_client.get("/api/v1/cards/amina-demo").json()
 
 
 def test_exact_keys(card):

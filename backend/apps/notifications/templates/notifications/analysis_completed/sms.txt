@@ -1,0 +1,1 @@
+{% autoescape off %}SkillProof: your Signal Score is {{ score }}.{% if top_skills %} Top skill: {{ top_skills.0 }}.{% endif %}{% if tips %} Tip: {{ tips.0 }}.{% endif %}{% endautoescape %}

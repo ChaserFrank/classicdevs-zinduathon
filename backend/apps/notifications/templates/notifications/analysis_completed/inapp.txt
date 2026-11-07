@@ -1,0 +1,1 @@
+{% autoescape off %}Your analysis is ready: Signal Score {{ score }}{% if top_skills %}. Top skills: {{ top_skills|join:', ' }}{% endif %}.{% endautoescape %}

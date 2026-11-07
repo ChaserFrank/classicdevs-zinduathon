@@ -16,7 +16,7 @@ URL = "/api/v1/analyses"
 
 @pytest.fixture
 def seeker_with_github():
-    account = GithubAccountFactory(login="amina-dev")
+    account = GithubAccountFactory(login="amina-demo")
     return account.user
 
 
@@ -35,19 +35,19 @@ class TestStart:
         self, auth_client, seeker_with_github, django_capture_on_commit_callbacks
     ):
         client = auth_client(seeker_with_github)
-        response = post(client, run="amina-dev", capture=django_capture_on_commit_callbacks)
+        response = post(client, run="amina-demo", capture=django_capture_on_commit_callbacks)
 
         assert response.status_code == 202
         assert set(response.json()) == {"id", "status"}
         analysis = Analysis.objects.get(public_id=response.json()["id"])
-        assert analysis.github_login == "amina-dev"
+        assert analysis.github_login == "amina-demo"
         assert analysis.job_seeker == seeker_with_github.job_seeker_profile
         assert analysis.status == "completed"  # Celery runs eagerly in tests
         assert AuditLog.objects.filter(action="analysis.run").exists()
 
         detail = client.get(f"{URL}/{analysis.public_id}").json()
         assert detail["status"] == "completed"
-        assert detail["card"]["username"] == "amina-dev"
+        assert detail["card"]["username"] == "amina-demo"
         assert detail["card"]["profile"]["verifiedOwner"] is True
         assert detail["tips"]
 
@@ -69,7 +69,7 @@ class TestStart:
             {"githubLogin": "torvalds"},
             capture=django_capture_on_commit_callbacks,
         )
-        assert Analysis.objects.get(public_id=response.json()["id"]).github_login == "amina-dev"
+        assert Analysis.objects.get(public_id=response.json()["id"]).github_login == "amina-demo"
 
     def test_recruiters_cannot_run_analyses(self, auth_client, recruiter):
         assert auth_client(recruiter).post(URL, {}).json()["code"] == "permission_denied"
@@ -91,17 +91,17 @@ class TestStart:
     ):
         response = post(
             auth_client(admin_user),
-            {"githubLogin": "Brian-Learns"},
-            run="brian-learns",
+            {"githubLogin": "Brian-Demo"},
+            run="brian-demo",
             capture=django_capture_on_commit_callbacks,
         )
         analysis = Analysis.objects.get(public_id=response.json()["id"])
-        assert analysis.github_login == "brian-learns"
+        assert analysis.github_login == "brian-demo"
         assert analysis.job_seeker is None
         assert analysis.status == "completed"
 
     def test_one_running_analysis_per_login(self, auth_client, seeker_with_github):
-        Analysis.objects.create(github_login="amina-dev", status="running")
+        Analysis.objects.create(github_login="amina-demo", status="running")
         response = auth_client(seeker_with_github).post(URL, {})
         assert response.status_code == 409
         assert response.json()["code"] == "analysis_in_progress"
@@ -109,7 +109,7 @@ class TestStart:
     def test_stale_running_analysis_is_expired(
         self, auth_client, seeker_with_github, django_capture_on_commit_callbacks
     ):
-        stale = Analysis.objects.create(github_login="amina-dev", status="running")
+        stale = Analysis.objects.create(github_login="amina-demo", status="running")
         Analysis.objects.filter(pk=stale.pk).update(
             updated_at=timezone.now() - timedelta(minutes=16)
         )
@@ -131,7 +131,7 @@ class TestStart:
 
     def _completed(self, user, hours_ago=1):
         return Analysis.objects.create(
-            github_login="amina-dev",
+            github_login="amina-demo",
             job_seeker=user.job_seeker_profile,
             status="completed",
             signal_score=50,
@@ -194,7 +194,7 @@ class TestReadAnalyses:
         self, auth_client, seeker_with_github, job_seeker, recruiter, admin_user
     ):
         analysis = Analysis.objects.create(
-            github_login="amina-dev", job_seeker=seeker_with_github.job_seeker_profile
+            github_login="amina-demo", job_seeker=seeker_with_github.job_seeker_profile
         )
         url = f"{URL}/{analysis.public_id}"
         assert auth_client(job_seeker).get(url).status_code == 404
@@ -204,7 +204,7 @@ class TestReadAnalyses:
 
     def test_failed_analysis_shows_error(self, auth_client, seeker_with_github):
         analysis = Analysis.objects.create(
-            github_login="amina-dev",
+            github_login="amina-demo",
             job_seeker=seeker_with_github.job_seeker_profile,
             status="failed",
             error_code="no_public_repos",
@@ -223,7 +223,7 @@ class TestReadAnalyses:
         profile = seeker_with_github.job_seeker_profile
         for score in (40, 55, 70):
             a = Analysis.objects.create(
-                github_login="amina-dev",
+                github_login="amina-demo",
                 job_seeker=profile,
                 status="completed",
                 signal_score=score,

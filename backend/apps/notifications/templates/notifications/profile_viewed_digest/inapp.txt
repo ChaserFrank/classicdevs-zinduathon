@@ -1,0 +1,1 @@
+{% autoescape off %}{{ views }} recruiter{{ views|pluralize }} viewed your skill card this week.{% endautoescape %}

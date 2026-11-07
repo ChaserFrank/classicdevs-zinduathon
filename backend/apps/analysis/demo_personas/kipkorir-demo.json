@@ -1,0 +1,25 @@
+{
+  "login": "kipkorir-demo",
+  "id": 4,
+  "name": "Kipkorir Langat",
+  "note": "Go backend engineer: payments service with CI and Docker, a CLI tool, mostly solo authorship.",
+  "repos": [
+    {
+      "id": 901, "name": "mpesa-gateway",
+      "languages": {"Go": 80000, "Shell": 1200},
+      "commit_series": [{"start": "2025-11-20T07:00:00+00:00", "count": 60, "every_days": 5, "additions": 90, "deletions": 30}],
+      "total_commits": 64,
+      "tree": ["go.mod", "cmd/server/main.go", "internal/pay/pay_test.go", ".github/workflows/ci.yml", "Dockerfile", "docker-compose.yml"],
+      "files": {"go.mod": "module github.com/kipkorir-demo/mpesa-gateway\n\ngo 1.22\n\nrequire (\n\tgithub.com/gin-gonic/gin v1.9.1\n\tgithub.com/lib/pq v1.10.9\n)\n"},
+      "readme_size": 3100
+    },
+    {
+      "id": 902, "name": "envcheck",
+      "languages": {"Go": 9000},
+      "commit_series": [{"start": "2026-07-01T07:00:00+00:00", "count": 11, "every_days": 4, "additions": 60, "deletions": 10}],
+      "tree": ["go.mod", "main.go", "main_test.go"],
+      "files": {"go.mod": "module github.com/kipkorir-demo/envcheck\n\ngo 1.22\n"},
+      "readme_size": 650
+    }
+  ]
+}

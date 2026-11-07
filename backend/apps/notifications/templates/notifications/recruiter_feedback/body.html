@@ -1,0 +1,7 @@
+{% extends "notifications/_base.html" %}
+{% block content %}
+<p><strong>{{ recruiter_name }}</strong> at <strong>{{ company }}</strong> sent you feedback.</p>
+<p>Status: <strong>{{ status_label }}</strong></p>
+<blockquote style="margin:16px 0;padding:12px 16px;background:#f4f4f2;border-left:3px solid #0f766e;white-space:pre-line">{{ message }}</blockquote>
+{% endblock %}
+{% block cta %}Read it in your inbox{% endblock %}

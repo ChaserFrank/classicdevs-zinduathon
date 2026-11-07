@@ -1,0 +1,1 @@
+{% autoescape off %}Your SkillProof recruiter account is approved{% endautoescape %}

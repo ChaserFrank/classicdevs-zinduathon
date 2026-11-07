@@ -51,7 +51,7 @@ def _set_progress(analysis, step: int) -> None:
     analysis.save(update_fields=["progress_step", "updated_at"])
 
 
-def run(analysis) -> None:
+def run(analysis, client: GithubClient | None = None) -> None:
     """Run an analysis to completion or failure. Never raises for expected GitHub errors."""
     from apps.analysis.models import AnalysisStatus
 
@@ -60,7 +60,7 @@ def run(analysis) -> None:
     analysis.progress_step = 1
     analysis.save(update_fields=["status", "started_at", "progress_step", "updated_at"])
     try:
-        client = GithubClient(
+        client = client or GithubClient(
             _token_for(analysis),
             base_url=settings.GITHUB_API_URL,
             cache=DbCache(settings.GITHUB_CACHE_TTL_HOURS),
@@ -132,7 +132,44 @@ def _fail(analysis, code: str, message: str) -> None:
 
 
 def _on_finished(analysis) -> None:
-    """Hook for notifications (wired up in Phase 4)."""
+    """Tell the job seeker (admin-run analyses have nobody to tell). Never fails the analysis."""
+    if analysis.job_seeker is None:
+        return
+    from apps.notifications.models import Kind
+    from apps.notifications.services import notify
+
+    user = analysis.job_seeker.user
+    try:
+        if analysis.status == "completed":
+            top = list(
+                analysis.skill_rows.select_related("skill")
+                .order_by("-evidence", "skill__name")
+                .values_list("skill__name", flat=True)[:3]
+            )
+            notify(
+                user,
+                Kind.ANALYSIS_COMPLETED,
+                {
+                    "score": analysis.signal_score,
+                    "top_skills": top,
+                    "tips": analysis.tips,
+                    "login": analysis.github_login,
+                },
+                analysis=analysis,
+                link_path=f"/u/{analysis.github_login}",
+            )
+        else:
+            notify(
+                user,
+                Kind.ANALYSIS_FAILED,
+                {"reason": analysis.error_message, "login": analysis.github_login},
+                analysis=analysis,
+                link_path="/dashboard",
+            )
+    except Exception:
+        logger.exception(
+            "Analysis notification failed", extra={"analysis": str(analysis.public_id)}
+        )
 
 
 @transaction.atomic

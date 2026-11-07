@@ -1,0 +1,1 @@
+{% autoescape off %}Your recruiter account for {{ company }} was not approved.{% if note %} {{ note }}{% endif %}{% endautoescape %}

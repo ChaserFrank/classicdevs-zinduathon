@@ -10,6 +10,9 @@ api_v1 = [
     path("", include("apps.accounts.urls")),
     path("", include("apps.analysis.urls")),
     path("", include("apps.skills.urls")),
+    path("", include("apps.notifications.urls")),
+    path("", include("apps.recruiting.urls")),
+    path("", include("apps.adminpanel.urls")),
     # Docs are not throttled: judges and teammates browse them a lot at the venue.
     path("schema/", SpectacularAPIView.as_view(throttle_classes=[]), name="schema"),
     path(

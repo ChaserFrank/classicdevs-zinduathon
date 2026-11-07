@@ -1,0 +1,1 @@
+{% autoescape off %}SkillProof: {{ company }} sent you feedback ({{ status_label }}). Read it:{% endautoescape %}
