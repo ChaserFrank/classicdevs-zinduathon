@@ -1,0 +1,7 @@
+{% extends "notifications/_base.html" %}
+{% block content %}
+<p>Your recruiter account for <strong>{{ company }}</strong> is approved.</p>
+<p>You can now search candidates by proven skill, shortlist them, post jobs and send feedback.</p>
+{% if note %}<p><em>Note from the SkillProof team:</em> {{ note }}</p>{% endif %}
+{% endblock %}
+{% block cta %}Start searching{% endblock %}

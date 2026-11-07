@@ -1,0 +1,12 @@
+{% autoescape off %}Hi {{ user.full_name|default:"there" }},
+
+Your recruiter account for {{ company }} is approved.
+
+You can now search candidates by proven skill, shortlist them, post jobs and send feedback.{% if note %}
+
+Note from the SkillProof team: {{ note }}{% endif %}
+
+{% if link %}Open: {{ link }}
+
+{% endif %}--
+SkillProof. Change your notification settings in your account.{% endautoescape %}

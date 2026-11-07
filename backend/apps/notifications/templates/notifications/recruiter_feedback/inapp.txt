@@ -1,0 +1,1 @@
+{% autoescape off %}{{ recruiter_name }} at {{ company }}: {{ status_label }}. {{ message|truncatechars:140 }}{% endautoescape %}

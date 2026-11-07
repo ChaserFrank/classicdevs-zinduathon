@@ -44,6 +44,11 @@ in-memory email and cache, Celery tasks run inline. The health tests also ping t
 | `tests/analysis/test_pipeline.py` | End-to-end on persona fixtures: amina-dev, brian-learns, forks-only, unknown user, crash, token choice, determinism |
 | `tests/analysis/test_api.py` | Start (roles, email, GitHub link, reuse, force, claims changed, 409, stale expiry, throttle), detail visibility, history, cards, claimed skills, catalogue |
 | `tests/analysis/test_card_shape.py` | Snapshot of the card contract (key order, `hasCI`, Title Case values) through the real renderer |
+| `tests/notifications/test_sms_text.py` | GSM-7 replacement and counting, truncation keeps link and opt-out, every SMS template ≤ 160 with long names |
+| `tests/notifications/test_thrivewave.py` | Placeholder payload, response parsing, success, 4xx (no retry), 5xx and timeout (transient), dry run, missing credentials |
+| `tests/notifications/test_notify.py` | In-app + email + SMS, preferences, consent, verified phone, transactional email, inactive user, defaults, retries (3 then fail, recover, no retry on 4xx), SMTP error classes, identical resend |
+| `tests/notifications/test_api.py` | Preference matrix and consent sync, inbox (unread, read, read-all, ownership), webhooks (HMAC, shared secret, invalid, no secret, duplicate, unknown id, malformed), STOP opt-out |
+| `tests/notifications/test_triggers.py` | Analysis completed/failed notifications, admin-run analyses silent, recruiter approval email, suspension silent, defaults at register |
 | `tests/accounts/test_user_model.py` | Lowercase email, case-insensitive uniqueness (ORM and raw SQL), phone uniqueness with NULLs, role constraint, superuser rules |
 
 ## Adding tests

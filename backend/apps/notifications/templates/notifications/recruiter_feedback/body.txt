@@ -1,0 +1,12 @@
+{% autoescape off %}Hi {{ user.full_name|default:"there" }},
+
+{{ recruiter_name }} at {{ company }} sent you feedback.
+
+Status: {{ status_label }}
+
+{{ message }}
+
+{% if link %}Open: {{ link }}
+
+{% endif %}--
+SkillProof. Change your notification settings in your account.{% endautoescape %}

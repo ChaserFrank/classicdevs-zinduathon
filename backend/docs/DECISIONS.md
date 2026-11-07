@@ -148,3 +148,40 @@ The official `anthropic` SDK (not raw HTTP) with model `claude-opus-5-5` unless 
 otherwise, effort `low` (a short, well-specified writing task), a 15 s timeout, one retry, and
 server-side refusal fallback (`fallbacks: "default"`). Only the Anthropic provider is implemented;
 the `SummaryProvider` protocol leaves room for another.
+
+## D-026 Feedback FK on Notification arrives with the recruiting app (Phase 4)
+
+`notifications_notification.feedback` references `recruiting_feedback`, which is created in
+Phase 5. The column is added by a Phase 5 migration instead of creating an empty recruiting app
+early.
+
+## D-027 Rendered message stored on the Delivery (Phase 4)
+
+Email subject/text/HTML and the SMS text are rendered when the Delivery is created and kept in
+`provider_response["render"]`, next to the provider's raw reply. Retries (automatic or admin) send
+exactly what was first rendered, even if the template or data changed meanwhile. The Phase 6
+retention job clears old bodies.
+
+## D-028 Which emails need feedback consent (Phase 4)
+
+`analysis_failed`, `recruiter_approved` and `recruiter_rejected` are transactional (about the
+user's own account) and are emailed without `email_feedback` consent. Analysis results, recruiter
+feedback, shortlists and the digest need it. SMS always needs `sms_feedback` consent and a verified
+phone.
+
+## D-029 Retries without Celery's retry machinery (Phase 4)
+
+On a transient error the task records the attempt and re-queues itself with `apply_async`
+(30 s, 60 s). In eager mode (dev, tests) the re-run happens inline, so the 3-attempt behaviour is
+tested end to end. Celery's `self.retry()` raises inside eager runs, which made that harder.
+
+## D-030 SMTP error classes (Phase 4)
+
+`smtplib.SMTPException` subclasses `OSError`, so connection problems (`SMTPServerDisconnected`,
+`SMTPConnectError`, plain `OSError`/timeouts) are caught as transient first; other SMTP errors
+(recipient refused, data rejected) fail without retry.
+
+## D-031 Phone codes use the SMS adapter directly (Phase 4)
+
+Verification codes bypass preferences (brief 9.2) and are not stored as Delivery rows, so the code
+never lands in the database or logs. They still go through the same Thrivewave adapter and dry run.

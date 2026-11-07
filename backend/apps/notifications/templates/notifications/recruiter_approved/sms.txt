@@ -1,0 +1,1 @@
+{% autoescape off %}SkillProof: your recruiter account for {{ company }} is approved. Start here:{% endautoescape %}

@@ -132,7 +132,44 @@ def _fail(analysis, code: str, message: str) -> None:
 
 
 def _on_finished(analysis) -> None:
-    """Hook for notifications (wired up in Phase 4)."""
+    """Tell the job seeker (admin-run analyses have nobody to tell). Never fails the analysis."""
+    if analysis.job_seeker is None:
+        return
+    from apps.notifications.models import Kind
+    from apps.notifications.services import notify
+
+    user = analysis.job_seeker.user
+    try:
+        if analysis.status == "completed":
+            top = list(
+                analysis.skill_rows.select_related("skill")
+                .order_by("-evidence", "skill__name")
+                .values_list("skill__name", flat=True)[:3]
+            )
+            notify(
+                user,
+                Kind.ANALYSIS_COMPLETED,
+                {
+                    "score": analysis.signal_score,
+                    "top_skills": top,
+                    "tips": analysis.tips,
+                    "login": analysis.github_login,
+                },
+                analysis=analysis,
+                link_path=f"/u/{analysis.github_login}",
+            )
+        else:
+            notify(
+                user,
+                Kind.ANALYSIS_FAILED,
+                {"reason": analysis.error_message, "login": analysis.github_login},
+                analysis=analysis,
+                link_path="/dashboard",
+            )
+    except Exception:
+        logger.exception(
+            "Analysis notification failed", extra={"analysis": str(analysis.public_id)}
+        )
 
 
 @transaction.atomic

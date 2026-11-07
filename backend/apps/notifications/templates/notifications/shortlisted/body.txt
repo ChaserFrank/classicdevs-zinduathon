@@ -1,0 +1,10 @@
+{% autoescape off %}Hi {{ user.full_name|default:"there" }},
+
+Good news: {{ company }} moved you to "{{ stage_label }}"{% if job_title %} for the {{ job_title }} role{% endif %}.
+
+They may contact you directly. Keep your skill card up to date.
+
+{% if link %}Open: {{ link }}
+
+{% endif %}--
+SkillProof. Change your notification settings in your account.{% endautoescape %}

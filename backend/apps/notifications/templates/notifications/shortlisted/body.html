@@ -1,0 +1,6 @@
+{% extends "notifications/_base.html" %}
+{% block content %}
+<p>Good news: <strong>{{ company }}</strong> moved you to <strong>{{ stage_label }}</strong>{% if job_title %} for the {{ job_title }} role{% endif %}.</p>
+<p>They may contact you directly. Keep your skill card up to date.</p>
+{% endblock %}
+{% block cta %}Open your inbox{% endblock %}

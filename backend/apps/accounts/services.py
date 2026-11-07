@@ -97,11 +97,18 @@ def register(*, data: dict, request=None) -> User:
             job_title=data.get("job_title", ""),
         )
     record_consents(user, data["consents"], request)
+    _default_preferences(user)
     audit.record(
         "auth.register", actor=user, target=user, request=request, metadata={"role": user.role}
     )
     transaction.on_commit(lambda: emails.send_verification_email(user))
     return user
+
+
+def _default_preferences(user: User) -> None:
+    from apps.notifications.services import ensure_defaults
+
+    ensure_defaults(user)
 
 
 def verify_email(user: User, request=None) -> None:
@@ -269,6 +276,7 @@ def github_sign_in(
             JobSeekerProfile.objects.create(user=user)
             _link(user, identity)
             record_consents(user, state.consents, request)
+            _default_preferences(user)
             created, how = True, "created"
             audit.record(
                 "auth.register",

@@ -43,7 +43,21 @@ def set_status(
 
 
 def on_status_changed(profile: RecruiterProfile) -> None:
-    """Hook for notifications (wired up in Phase 4)."""
+    """Email (and SMS if opted in) the recruiter about approval or rejection."""
+    from apps.notifications.models import Kind
+    from apps.notifications.services import notify
+
+    kind = {
+        ApprovalStatus.APPROVED: Kind.RECRUITER_APPROVED,
+        ApprovalStatus.REJECTED: Kind.RECRUITER_REJECTED,
+    }.get(profile.approval_status)
+    if kind:
+        notify(
+            profile.user,
+            kind,
+            {"company": profile.company.name, "note": profile.review_note},
+            link_path="/recruiter",
+        )
 
 
 def approve(profile, *, reviewer, note="", request=None):
