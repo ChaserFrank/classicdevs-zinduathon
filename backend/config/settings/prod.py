@@ -6,7 +6,7 @@
 from django.core.exceptions import ImproperlyConfigured
 
 from .base import *
-from .env import env_bool, env_int, env_str
+from .env import env_bool, env_int, env_list, env_str
 
 DEBUG = False
 if not SECRET_KEY:
@@ -14,7 +14,21 @@ if not SECRET_KEY:
 if not ALLOWED_HOSTS:
     raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must be set in production.")
 
-# Render/Railway terminate TLS at their proxy and forward this header.
+# The API's own origin must be trusted for Django admin's login form (CSRF) over HTTPS.
+CSRF_TRUSTED_ORIGINS = [
+    *CORS_ALLOWED_ORIGINS,
+    # ".example.app" in ALLOWED_HOSTS means any subdomain → "https://*.example.app" here.
+    *(
+        f"https://*{host}" if host.startswith(".") else f"https://{host}"
+        for host in ALLOWED_HOSTS
+        if host not in ("*", "localhost")
+    ),
+    *env_list("DJANGO_CSRF_TRUSTED_ORIGINS"),
+]
+
+# The hosting platform terminates TLS at its proxy and (normally) forwards this header.
+# If the platform doesn't send it, HTTPS redirects would loop: set SECURE_SSL_REDIRECT=false
+# (the platform already forces HTTPS). See docs/DEPLOYMENT.md.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", True)
 # The health check is called over plain HTTP inside the platform network.

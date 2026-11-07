@@ -1,0 +1,36 @@
+# Production-style stack for a VM (e.g. a RumptyCloud VM). Uses managed PostgreSQL/Redis from
+# DATABASE_URL / REDIS_URL in .env. Separate web, worker and beat containers, same image.
+name: skillproof-prod
+
+x-app: &app
+  build: .
+  image: skillproof-backend:latest
+  env_file: .env
+  environment:
+    DJANGO_SETTINGS_MODULE: config.settings.prod
+  restart: unless-stopped
+
+services:
+  web:
+    <<: *app
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+      ROLE: web
+    ports: ["8080:8080"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8080/api/v1/health').status == 200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  worker:
+    <<: *app
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+      ROLE: worker
+
+  beat:
+    <<: *app
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+      ROLE: beat
