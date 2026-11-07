@@ -49,6 +49,9 @@ in-memory email and cache, Celery tasks run inline. The health tests also ping t
 | `tests/notifications/test_notify.py` | In-app + email + SMS, preferences, consent, verified phone, transactional email, inactive user, defaults, retries (3 then fail, recover, no retry on 4xx), SMTP error classes, identical resend |
 | `tests/notifications/test_api.py` | Preference matrix and consent sync, inbox (unread, read, read-all, ownership), webhooks (HMAC, shared secret, invalid, no secret, duplicate, unknown id, malformed), STOP opt-out |
 | `tests/notifications/test_triggers.py` | Analysis completed/failed notifications, admin-run analyses silent, recruiter approval email, suspension silent, defaults at register |
+| `tests/recruiting/test_rules.py` | Match credit table (incl. absent skills), weighted score, rounding; feedback cleaning, length, link schemes, abuse holding, word boundaries |
+| `tests/recruiting/test_candidates.py` | Search filters (skills AND, aliases, minLabel, minScore, openToWork, text, ordering), latest analysis, hidden cards, no contact details, permissions per role, detail + profile views, feedback (notify, held, validation, other company's job, throttle) |
+| `tests/recruiting/test_jobs_shortlists.py` | Jobs CRUD and visibility per role, alias resolution, matches ranking and `match/me`, shortlists (duplicates with/without job, notify, interview + feedback, privacy), feedback inbox, release/reject, profile-view counts |
 | `tests/accounts/test_user_model.py` | Lowercase email, case-insensitive uniqueness (ORM and raw SQL), phone uniqueness with NULLs, role constraint, superuser rules |
 
 ## Adding tests

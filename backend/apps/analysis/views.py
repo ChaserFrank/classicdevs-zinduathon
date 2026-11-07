@@ -282,7 +282,10 @@ class CardView(APIView):
 
 
 def on_card_viewed(request, analysis) -> None:
-    """Hook for recruiter profile views (wired up in Phase 5)."""
+    """Count the view when a recruiter opens a job seeker's public card."""
+    from apps.recruiting.views import record_view
+
+    record_view(request.user, analysis.job_seeker)
 
 
 class ClaimedSkillsView(APIView):

@@ -5,7 +5,7 @@ public GitHub history into an explained skill card: proven skills, a Signal Scor
 five rule-based sub-scores, and the evidence behind every number. Recruiters search, shortlist and
 send feedback; job seekers receive it in-app, by email and by SMS (Thrivewave).
 
-> Status: **Phases 1–4** complete (foundation; accounts and auth; analysis pipeline; notifications). See `docs/DECISIONS.md` and `../TESTING_LOG.md`.
+> Status: **Phases 1–5** complete (foundation; auth; analysis; notifications; recruiting). See `docs/DECISIONS.md` and `../TESTING_LOG.md`.
 
 ## Quick start (venv + Docker services) — recommended for development
 
@@ -56,6 +56,7 @@ apps/companies/    companies, recruiter profiles and approval
 apps/skills/       skill catalogue, aliases, dependency mappings (seeded)
 apps/analysis/     GitHub fetch, pure scoring rules, pipeline, analyses and cards
 apps/notifications/ inbox, preferences, email + Thrivewave SMS deliveries, webhooks
+apps/recruiting/   candidate search, jobs + match score, shortlists, feedback, profile views
 tests/             mirrors apps/; fixtures/github/ for recorded GitHub API responses
 docs/              AUTH.md, SCORING.md, NOTIFICATIONS.md, DECISIONS.md, TESTING.md (more arrive with their phases)
 scripts/           record_fixtures.py (record real GitHub responses for tests)
