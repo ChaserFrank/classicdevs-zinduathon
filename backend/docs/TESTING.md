@@ -54,6 +54,7 @@ in-memory email and cache, Celery tasks run inline. The health tests also ping t
 | `tests/recruiting/test_jobs_shortlists.py` | Jobs CRUD and visibility per role, alias resolution, matches ranking and `match/me`, shortlists (duplicates with/without job, notify, interview + feedback, privacy), feedback inbox, release/reject, profile-view counts |
 | `tests/adminpanel/test_admin_api.py` | Admin-only access, stats, recruiter queue + approve/reject (unverified email), user search/suspend/role (no self-change), deliveries filter + retry, audit-log filters, held feedback, skills/mappings changing detection |
 | `tests/adminpanel/test_privacy_and_jobs.py` | Export (job seeker, recruiter; no secrets), deletion (password, GitHub-only recent sign-in, anonymised feedback, admins), retention job, weekly digest, beat schedule, muted outbound, `seed_demo` idempotent, `warm_demo` |
+| `tests/core/test_deploy_hardening.py` | Health answers any Host and skips the HTTPS redirect, other paths still validated, production CSRF origins (incl. wildcard), SSL redirect switch, production refuses to start without a secret key |
 | `tests/accounts/test_user_model.py` | Lowercase email, case-insensitive uniqueness (ORM and raw SQL), phone uniqueness with NULLs, role constraint, superuser rules |
 
 ## Adding tests

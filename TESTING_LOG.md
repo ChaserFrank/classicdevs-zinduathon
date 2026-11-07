@@ -10,3 +10,4 @@ One line per rule or threshold change, with the reason. Newest at the bottom.
 | 2026-11-07 | 4 | Notification rules: 3 delivery attempts (30 s, 60 s backoff), SMS ≤ 160 GSM-7 chars, STOP words list | From the brief (9.1, 9.4); STOP synonyms added for common carrier keywords |
 | 2026-11-07 | 5 | Match score gives 0 (not 0.5) for required skills with no evidence | Otherwise every candidate gets half credit for every Emerging requirement (D-032) |
 | 2026-11-07 | 5 | Profile views: one per recruiter per job seeker per hour | Repeated page loads shouldn't inflate "N recruiters viewed" |
+| 2026-11-07 | 7 | Gunicorn timeout 60 s, 2 web + 2 Celery workers by default | Fit a 512 MB RumptyCloud instance; analyses run in Celery so requests stay short |

@@ -1,8 +1,5 @@
-from django.conf import settings
 from django.http import JsonResponse
-from django.utils import timezone
 from drf_spectacular.utils import OpenApiExample, extend_schema
-from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -42,19 +39,9 @@ class HealthView(APIView):
         ],
     )
     def get(self, request):
-        checks = {
-            "database": "ok" if health.check_database() else "down",
-            "redis": "ok" if health.check_redis() else "down",
-        }
-        healthy = all(value == "ok" for value in checks.values())
-        body = {
-            "status": "ok" if healthy else "degraded",
-            "checks": checks,
-            "version": settings.APP_VERSION,
-            "commit_sha": settings.GIT_COMMIT_SHA,
-            "time": timezone.localtime().isoformat(),
-        }
-        return Response(body, status=status.HTTP_200_OK if healthy else 503)
+        body, status_code = health.report()
+        # Already camelCase; the renderer leaves camelCase keys untouched.
+        return Response(body, status=status_code)
 
 
 def json_404(request, exception=None):

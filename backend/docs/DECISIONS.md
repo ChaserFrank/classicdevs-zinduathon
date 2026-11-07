@@ -251,3 +251,24 @@ them). Held feedback has API endpoints as well as Django admin actions.
 
 Accounts with a password confirm with it. GitHub-only accounts confirm by having signed in within
 the last 10 minutes (the frontend sends them through GitHub sign-in again before deleting).
+
+## D-042 RumptyCloud: one container runs web, worker and beat (Phase 7)
+
+RumptyCloud Deployments are one HTTP service each and its docs list no worker or cron type.
+`start.sh` (`ROLE=all`) runs migrations, gunicorn and a Celery worker with embedded beat, forwards
+SIGTERM to both and exits 1 if either dies so the platform restarts the container. Correct for one
+instance (the free tier maximum). `ROLE=web|worker|beat` and `docker-compose.prod.yml` cover a VM
+with separate processes. Render/Railway notes from the brief were replaced (user's choice).
+
+## D-043 Health check bypasses host validation and HTTPS redirect (Phase 7)
+
+Platform probes often use an internal address as Host and plain HTTP. `HealthCheckMiddleware`
+answers `GET/HEAD /api/v1/health` right after the request-id middleware, before `ALLOWED_HOSTS` and
+`SECURE_SSL_REDIRECT` apply; every other path is still validated. It exposes only up/down and the
+version, nothing sensitive.
+
+## D-044 Production CSRF origins include the API's own https hosts (Phase 7)
+
+Django admin logs in with a form POST. Trusting `https://<each allowed host>` (and
+`https://*.<domain>` for `.domain` entries) keeps admin login working even if the platform doesn't
+send `X-Forwarded-Proto` and `SECURE_SSL_REDIRECT` has to be turned off.

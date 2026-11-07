@@ -5,7 +5,7 @@ public GitHub history into an explained skill card: proven skills, a Signal Scor
 five rule-based sub-scores, and the evidence behind every number. Recruiters search, shortlist and
 send feedback; job seekers receive it in-app, by email and by SMS (Thrivewave).
 
-> Status: **Phases 1–6** complete. Phase 7 (hardening and deployment) is next. See `docs/DECISIONS.md` and `../TESTING_LOG.md`.
+> Status: **all 7 phases complete**. Deploys to RumptyCloud: see [DEPLOYMENT](docs/DEPLOYMENT.md). See `docs/DECISIONS.md` and `../TESTING_LOG.md`.
 
 ## Quick start (venv + Docker services) — recommended for development
 
@@ -24,7 +24,8 @@ make run                      # http://localhost:8000
 cd backend && cp .env.example .env && make dev
 ```
 
-Web on :8000 (with a Celery worker and beat), Mailpit UI at http://localhost:8025.
+Web on :8000 (with a Celery worker and beat), Mailpit UI at http://localhost:8025. If a port is
+busy, set `WEB_HOST_PORT` (web) or `POSTGRES_HOST_PORT` (database, default 5433).
 
 ## Useful URLs
 
@@ -114,5 +115,6 @@ Their analyses come from six fictional GitHub personas run through the real scor
 | [NOTIFICATIONS](docs/NOTIFICATIONS.md) | Events, templates, SMS length rule, Thrivewave adapter, webhooks |
 | [FRONTEND_INTEGRATION](docs/FRONTEND_INTEGRATION.md) | Env, types, fetch wrapper, sign-in, polling, error codes |
 | [SECURITY_AND_PRIVACY](docs/SECURITY_AND_PRIVACY.md) | Threats and controls, Kenya DPA |
+| [DEPLOYMENT](docs/DEPLOYMENT.md) | RumptyCloud step by step, env vars, HTTPS notes, VM alternative |
 | [TESTING](docs/TESTING.md) | How to run, coverage, fixtures, what each test covers |
 | [DECISIONS](docs/DECISIONS.md) | Every significant choice and trade-off |
