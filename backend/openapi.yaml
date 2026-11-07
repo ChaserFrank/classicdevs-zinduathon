@@ -7,6 +7,231 @@ info:
 
     Conventions: JSON with camelCase keys, `Authorization: Bearer <access token>`, page-number pagination (`?page=&pageSize=`), errors shaped `{code, message, fields?}`.
 paths:
+  /api/v1/analyses:
+    get:
+      operationId: analyses_list
+      description: Job seekers see their own analyses (scores over time are the iteration
+        evidence). Admins see all, filterable by `githubLogin` and `status`.
+      summary: Analysis history
+      parameters:
+      - in: query
+        name: githubLogin
+        schema:
+          type: string
+        description: Admins only
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: pageSize
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - completed
+          - failed
+          - queued
+          - running
+        description: Admins only
+      tags:
+      - Analyses
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AnalysisListItem'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `permission_denied`'
+    post:
+      operationId: analyses_create
+      description: 'Job seekers analyse their own linked GitHub account (email must
+        be verified). Admins pass `githubLogin`. Returns `202 {id, status}` and runs
+        in the background: poll `GET /analyses/{id}`. A completed analysis under 24
+        h old is returned instead (`200`, with the card) unless `force` is true or
+        the claimed skills changed. Only one analysis per login runs at a time. Throttled
+        to 10 per hour.'
+      summary: Start an analysis
+      tags:
+      - Analyses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalysisCreateRequest'
+            examples:
+              JobSeeker:
+                value: {}
+                summary: Job seeker
+              Admin:
+                value:
+                  githubLogin: octocat
+                  force: true
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AnalysisCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AnalysisCreateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisDetail'
+          description: ''
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisStarted'
+              examples:
+                Started:
+                  value:
+                    id: 1b6f…
+                    status: queued
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ValidationError:
+                  value:
+                    code: validation_error
+                    message: …
+                  summary: validation_error
+                GithubNotLinked:
+                  value:
+                    code: github_not_linked
+                    message: …
+                  summary: github_not_linked
+          description: 'Bad request: `validation_error`, `github_not_linked`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                EmailNotVerified:
+                  value:
+                    code: email_not_verified
+                    message: …
+                  summary: email_not_verified
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `email_not_verified`, `permission_denied`'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                AnalysisInProgress:
+                  value:
+                    code: analysis_in_progress
+                    message: …
+                  summary: analysis_in_progress
+          description: 'Conflict: `analysis_in_progress`'
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                RateLimited:
+                  value:
+                    code: rate_limited
+                    message: …
+                  summary: rate_limited
+          description: 'Too many requests: `rate_limited`'
+  /api/v1/analyses/{public_id}:
+    get:
+      operationId: analyses_retrieve
+      description: Poll every 2–3 seconds while `status` is `queued` or `running`;
+        `progressStep` goes 1→4. When `completed`, `card` holds the skill card. When
+        `failed`, `errorCode` is one of `not_found`, `no_public_repos`, `github_rate_limited`,
+        `github_unavailable`, `timeout`, `server_error`.
+      summary: Analysis status and card
+      parameters:
+      - in: path
+        name: publicId
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Analyses
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisDetail'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
   /api/v1/auth/email/resend:
     post:
       operationId: auth_email_resend_create
@@ -828,6 +1053,97 @@ paths:
                     message: …
                   summary: token_invalid
           description: 'Not signed in or token invalid: `token_invalid`'
+  /api/v1/cards/{github_login}:
+    get:
+      operationId: cards_retrieve
+      description: The latest completed card for a GitHub login, or 404. Cards of
+        job seekers are preferred over admin-run analyses of the same login.
+      summary: Public skill card
+      parameters:
+      - in: path
+        name: githubLogin
+        schema:
+          type: string
+        required: true
+      tags:
+      - Analyses
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Card'
+              examples:
+                Card:
+                  value:
+                    username: wanjiru-dev
+                    profile:
+                      username: wanjiru-dev
+                      name: Wanjiru Kamau
+                      avatarUrl: https://avatars.githubusercontent.com/u/1
+                      verifiedOwner: true
+                    signalScore: 72
+                    subScores:
+                      consistency:
+                        value: 15
+                        reason: Active in 20 of the last 52 weeks
+                      iteration:
+                        value: 14
+                        reason: Median commit 120 lines; 4 of 6 repos with 10+ commits;
+                          1 mostly arrived in one commit
+                      quality:
+                        value: 17
+                        reason: Has tests, CI, a README; missing Docker or .env.example
+                      breadth:
+                        value: 14
+                        reason: 3 strong skills, 1 moderate
+                      ownership:
+                        value: 12
+                        reason: Wrote most of the commits in 4 of 6 original repos
+                    skills:
+                    - name: TypeScript
+                      category: Language
+                      label: Strong
+                      evidence: 3.6
+                      repos:
+                      - name: shop-app
+                        url: https://github.com/wanjiru-dev/shop-app
+                        commits: 48
+                        firstCommit: '2026-03-02T09:12:00+00:00'
+                        lastCommit: '2026-10-28T17:40:00+00:00'
+                        hasTests: true
+                        hasCI: true
+                    claims:
+                    - skill: React
+                      status: Verified
+                    - skill: Kubernetes
+                      status: Unverified
+                    flags:
+                    - type: one_shot_dump
+                      repo: matatu-routes
+                      reason: 86% of the sampled code in matatu-routes arrived in
+                        a single commit. Worth asking how it was built.
+                    aiSummary: Strongest evidence is in TypeScript and React across
+                      6 public repositories. …
+                    reposAnalysed: 6
+                    commitsAnalysed: 182
+                    analysedAt: '2026-11-07T10:00:00+00:00'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
   /api/v1/health:
     get:
       operationId: health_retrieve
@@ -970,8 +1286,270 @@ paths:
                     message: …
                   summary: not_authenticated
           description: 'Not signed in or token invalid: `not_authenticated`'
+  /api/v1/me/claimed-skills:
+    get:
+      operationId: me_claimed_skills_retrieve
+      summary: My claimed skills
+      tags:
+      - Profile
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimedSkills'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `permission_denied`'
+    put:
+      operationId: me_claimed_skills_update
+      description: What you list on your CV (max 12), in order. Each entry is matched
+        to the catalogue by name or alias ("reactjs" → React); unmatched entries are
+        kept and will show as Unverified. Changing the list makes the next analysis
+        run fresh.
+      summary: Replace my claimed skills
+      tags:
+      - Profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimedSkillsUpdateRequest'
+            examples:
+              CVSkills:
+                value:
+                  skills:
+                  - React
+                  - django
+                  - Kubernetes
+                summary: CV skills
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClaimedSkillsUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimedSkillsUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimedSkills'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ValidationError:
+                  value:
+                    code: validation_error
+                    message: …
+                  summary: validation_error
+          description: 'Bad request: `validation_error`'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `permission_denied`'
+  /api/v1/skills:
+    get:
+      operationId: skills_list
+      description: For autocomplete. `search` matches names and aliases ("js" finds
+        JavaScript).
+      summary: Skill catalogue
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+          enum:
+          - framework
+          - language
+          - practice
+          - tool
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: pageSize
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+      tags:
+      - Skills
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSkillList'
+          description: ''
 components:
   schemas:
+    AnalysisCreateRequest:
+      type: object
+      properties:
+        githubLogin:
+          type: string
+          minLength: 1
+          description: 'Admins only: the GitHub login to analyse. Job seekers always
+            analyse their own.'
+          pattern: ^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$
+        force:
+          type: boolean
+          default: false
+          description: Ignore a result under 24 h old.
+    AnalysisDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        githubLogin:
+          type: string
+        status:
+          $ref: '#/components/schemas/AnalysisDetailStatusEnum'
+        progressStep:
+          type: integer
+          description: 1 reading repos · 2 reading commits · 3 finding skills · 4
+            scoring
+        errorCode:
+          type: string
+        errorMessage:
+          type: string
+        signalScore:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        card:
+          allOf:
+          - $ref: '#/components/schemas/Card'
+          nullable: true
+        tips:
+          type: array
+          items:
+            type: string
+          description: Owner and admins only; empty for others.
+      required:
+      - card
+      - completedAt
+      - createdAt
+      - errorCode
+      - errorMessage
+      - githubLogin
+      - id
+      - progressStep
+      - signalScore
+      - status
+      - tips
+    AnalysisDetailStatusEnum:
+      enum:
+      - queued
+      - running
+      - completed
+      - failed
+      type: string
+      description: |-
+        * `queued` - queued
+        * `running` - running
+        * `completed` - completed
+        * `failed` - failed
+    AnalysisListItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        githubLogin:
+          type: string
+        status:
+          type: string
+        signalScore:
+          type: integer
+          nullable: true
+        subScores:
+          type: object
+          additionalProperties:
+            type: integer
+          readOnly: true
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - completedAt
+      - createdAt
+      - githubLogin
+      - id
+      - signalScore
+      - status
+      - subScores
+    AnalysisStarted:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+      required:
+      - id
+      - status
     ApprovalStatusEnum:
       enum:
       - pending
@@ -998,6 +1576,224 @@ components:
       - access
       - refresh
       - user
+    Card:
+      type: object
+      properties:
+        username:
+          type: string
+        profile:
+          $ref: '#/components/schemas/CardProfile'
+        signalScore:
+          type: integer
+          maximum: 100
+          minimum: 0
+        subScores:
+          $ref: '#/components/schemas/CardSubScores'
+        skills:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardSkill'
+        claims:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardClaim'
+        flags:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardFlag'
+        aiSummary:
+          type: string
+        reposAnalysed:
+          type: integer
+        commitsAnalysed:
+          type: integer
+        analysedAt:
+          type: string
+          format: date-time
+      required:
+      - aiSummary
+      - analysedAt
+      - claims
+      - commitsAnalysed
+      - flags
+      - profile
+      - reposAnalysed
+      - signalScore
+      - skills
+      - subScores
+      - username
+    CardClaim:
+      type: object
+      properties:
+        skill:
+          type: string
+        status:
+          $ref: '#/components/schemas/CardClaimStatusEnum'
+      required:
+      - skill
+      - status
+    CardClaimStatusEnum:
+      enum:
+      - Verified
+      - Partly
+      - Unverified
+      type: string
+      description: |-
+        * `Verified` - Verified
+        * `Partly` - Partly
+        * `Unverified` - Unverified
+    CardFlag:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        repo:
+          type: string
+        reason:
+          type: string
+      required:
+      - reason
+      - type
+    CardProfile:
+      type: object
+      properties:
+        username:
+          type: string
+        name:
+          type: string
+          nullable: true
+        avatarUrl:
+          type: string
+          format: uri
+        verifiedOwner:
+          type: boolean
+      required:
+      - avatarUrl
+      - name
+      - username
+      - verifiedOwner
+    CardRepo:
+      type: object
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+          format: uri
+        commits:
+          type: integer
+        firstCommit:
+          type: string
+          format: date-time
+        lastCommit:
+          type: string
+          format: date-time
+        hasTests:
+          type: boolean
+        hasCI:
+          type: boolean
+      required:
+      - commits
+      - firstCommit
+      - hasCI
+      - hasTests
+      - lastCommit
+      - name
+      - url
+    CardSkill:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          $ref: '#/components/schemas/CardSkillCategoryEnum'
+        label:
+          $ref: '#/components/schemas/LabelEnum'
+        evidence:
+          type: number
+          format: double
+        repos:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardRepo'
+      required:
+      - category
+      - evidence
+      - label
+      - name
+      - repos
+    CardSkillCategoryEnum:
+      enum:
+      - Language
+      - Framework
+      - Practice
+      - Tool
+      type: string
+      description: |-
+        * `Language` - Language
+        * `Framework` - Framework
+        * `Practice` - Practice
+        * `Tool` - Tool
+    CardSubScores:
+      type: object
+      properties:
+        consistency:
+          $ref: '#/components/schemas/SubScoreValue'
+        iteration:
+          $ref: '#/components/schemas/SubScoreValue'
+        quality:
+          $ref: '#/components/schemas/SubScoreValue'
+        breadth:
+          $ref: '#/components/schemas/SubScoreValue'
+        ownership:
+          $ref: '#/components/schemas/SubScoreValue'
+      required:
+      - breadth
+      - consistency
+      - iteration
+      - ownership
+      - quality
+    ClaimedSkill:
+      type: object
+      properties:
+        rawText:
+          type: string
+          maxLength: 80
+        skill:
+          allOf:
+          - $ref: '#/components/schemas/Skill'
+          nullable: true
+        position:
+          type: integer
+          maximum: 32767
+          minimum: 0
+      required:
+      - rawText
+      - skill
+    ClaimedSkills:
+      type: object
+      properties:
+        skills:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClaimedSkill'
+          readOnly: true
+      required:
+      - skills
+    ClaimedSkillsUpdateRequest:
+      type: object
+      properties:
+        skills:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 80
+          description: What you list on your CV, in order (max 12). Replaces the current
+            list.
+          maxItems: 12
+      required:
+      - skills
     Company:
       type: object
       properties:
@@ -1187,6 +1983,18 @@ components:
           description: Recruiters can find and view this card.
         openToWork:
           type: boolean
+    LabelEnum:
+      enum:
+      - Strong
+      - Moderate
+      - Emerging
+      - Unverified
+      type: string
+      description: |-
+        * `Strong` - Strong
+        * `Moderate` - Moderate
+        * `Emerging` - Emerging
+        * `Unverified` - Unverified
     LoginRequest:
       type: object
       properties:
@@ -1270,6 +2078,29 @@ components:
         * `job_seeker` - Job seeker
         * `recruiter` - Recruiter
         * `admin` - Admin
+    PaginatedSkillList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Skill'
     PasswordChangeRequest:
       type: object
       properties:
@@ -1418,6 +2249,46 @@ components:
       description: |-
         * `job_seeker` - job_seeker
         * `recruiter` - recruiter
+    Skill:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 80
+        slug:
+          type: string
+          maxLength: 80
+          pattern: ^[-a-zA-Z0-9_]+$
+        category:
+          $ref: '#/components/schemas/SkillCategoryEnum'
+      required:
+      - category
+      - name
+      - slug
+    SkillCategoryEnum:
+      enum:
+      - language
+      - framework
+      - practice
+      - tool
+      type: string
+      description: |-
+        * `language` - Language
+        * `framework` - Framework
+        * `practice` - Practice
+        * `tool` - Tool
+    SubScoreValue:
+      type: object
+      properties:
+        value:
+          type: integer
+          maximum: 20
+          minimum: 0
+        reason:
+          type: string
+      required:
+      - reason
+      - value
     TokenPair:
       type: object
       properties:
@@ -1437,6 +2308,18 @@ components:
           description: The token from the emailed link.
       required:
       - token
+    TypeEnum:
+      enum:
+      - one_shot_dump
+      - unexplained_bulk
+      - tutorial_clone
+      - unverified_claim
+      type: string
+      description: |-
+        * `one_shot_dump` - one_shot_dump
+        * `unexplained_bulk` - unexplained_bulk
+        * `tutorial_clone` - tutorial_clone
+        * `unverified_claim` - unverified_claim
   securitySchemes:
     jwtAuth:
       type: http
