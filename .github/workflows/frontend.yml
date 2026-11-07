@@ -39,4 +39,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build production image
-        run: docker build -f frontend/Dockerfile --target prod -t skillproof-frontend:ci .
+        run: docker build -f Dockerfile --target prod -t skillproof-frontend:ci .
