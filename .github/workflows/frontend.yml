@@ -39,4 +39,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build production image
-        run: docker build -f Dockerfile --target prod -t skillproof-frontend:ci .
+        # Build context is the repository root: the image copies frontend/ and backend/openapi.yaml.
+        working-directory: .
+        run: docker build -f frontend/Dockerfile --target prod -t skillproof-frontend:ci .
