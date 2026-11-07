@@ -1,0 +1,10 @@
+dist
+coverage
+node_modules
+src/lib/api/schema.d.ts
+playwright-report
+test-results
+e2e/__screenshots__
+frontend-prompt
+package-lock.json
+public

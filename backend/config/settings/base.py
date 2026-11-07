@@ -58,10 +58,11 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     "apps.core.middleware.RequestIdMiddleware",
-    "apps.core.middleware.HealthCheckMiddleware",  # before Host checks and HTTPS redirect
-    "django.middleware.security.SecurityMiddleware",
+    "django.middleware.security.SecurityMiddleware",  # health is in SECURE_REDIRECT_EXEMPT
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    # After CORS (so browsers can read /health) and before CommonMiddleware's Host check.
+    "apps.core.middleware.HealthCheckMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -215,7 +216,8 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 # --- CORS / CSRF ----------------------------------------------------------------------------------
-CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
+# Vite dev server (frontend/) on 5173; 3000 kept for other local frontends.
+CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000")
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 CORS_EXPOSE_HEADERS = ["Content-Disposition", "X-Request-ID"]
 CORS_ALLOW_HEADERS = (
@@ -224,6 +226,8 @@ CORS_ALLOW_HEADERS = (
     "content-type",
     "x-request-id",
 )
+# Platform health probes use plain HTTP; never redirect them (any environment with SSL redirect).
+SECURE_REDIRECT_EXEMPT = [r"^api/v1/health$"]
 JWT_REFRESH_IN_COOKIE = env_bool("JWT_REFRESH_IN_COOKIE", False)
 CORS_ALLOW_CREDENTIALS = JWT_REFRESH_IN_COOKIE
 
