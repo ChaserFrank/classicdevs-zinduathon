@@ -34,7 +34,9 @@ class Notification(PublicIdModel):
     title = models.CharField(max_length=200)
     body = models.TextField(blank=True)
     link_path = models.CharField(max_length=200, blank=True, help_text="Path on FRONTEND_URL")
-    # `feedback` (FK to recruiting.Feedback) is added in Phase 5 with the recruiting app.
+    feedback = models.ForeignKey(
+        "recruiting.Feedback", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
     analysis = models.ForeignKey(
         "analysis.Analysis", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )

@@ -185,3 +185,44 @@ tested end to end. Celery's `self.retry()` raises inside eager runs, which made 
 
 Verification codes bypass preferences (brief 9.2) and are not stored as Delivery rows, so the code
 never lands in the database or logs. They still go through the same Thrivewave adapter and dry run.
+
+## D-032 Match score: no half credit for skills we found no evidence of (Phase 5)
+
+Brief 8.7 gives 0.5 credit "one level below" the minimum. A required skill the candidate doesn't
+show at all (absent or Unverified) earns 0 even when the minimum is Emerging; otherwise every
+candidate would get half credit for every Emerging requirement. Rounding is half-up like the rest.
+
+## D-033 Candidate search uses the latest completed analysis (Phase 5)
+
+Each job seeker is represented by their most recent completed analysis (correlated subquery);
+skill filters are `EXISTS` checks on `analysis_analysisskill (skill, label)`, so filtering and
+pagination happen in PostgreSQL. `/jobs/{id}/matches` scores visible candidates in Python, which is
+fine at hackathon scale; precomputing scores is the next step if the pool grows.
+
+## D-034 Feedback moderation: held, not rejected (Phase 5)
+
+HTML is stripped, 1,000 characters max, links must be https. Abusive language (a small
+English/Swahili word list) doesn't block the recruiter: the message is stored with
+`moderation=held`, not notified, and appears in Django admin where "release" sends it and "reject"
+keeps it unsent. Recruiters see the moderation state on their sent list; job seekers never see
+held or rejected messages. Feedback stores a `company_name` snapshot and survives the recruiter's
+account deletion (recruiter set to NULL).
+
+## D-035 Who may do what with jobs and shortlists (Phase 5)
+
+Recruiters of the same company can read each other's postings; only the creator (or an admin)
+edits or deletes. Job seekers see open postings only. Shortlists are private to the recruiter who
+made them. A shortlist entry is unique per (recruiter, job seeker, job), with a partial constraint
+covering "no job" because NULLs don't collide in a plain unique constraint.
+
+## D-036 Shortlist notifications are opt-in per action (Phase 5)
+
+Being saved to a shortlist is private. The job seeker hears about it only when the recruiter sets
+`notifyCandidate` (on create or a stage change), or sends `feedbackMessage` with a stage change
+(brief: "moving to interview can optionally send feedback").
+
+## D-037 Profile views are counted per recruiter per hour; job seekers see counts only (Phase 5)
+
+A view is recorded when an approved recruiter opens `/candidates/{login}` or the public card while
+signed in, at most once per recruiter per job seeker per hour. `/me/profile-views` returns distinct
+recruiters this week and per week for 8 weeks, never names.

@@ -50,6 +50,7 @@ LOCAL_APPS = [
     "apps.skills",
     "apps.analysis",
     "apps.notifications",
+    "apps.recruiting",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -283,6 +284,11 @@ SPECTACULAR_SETTINGS = {
     "ENUM_NAME_OVERRIDES": {
         "DependencyStatusEnum": ["ok", "down"],
         "HealthStatusEnum": ["ok", "degraded"],
+        "ShortlistStageEnum": "apps.recruiting.models.Stage",
+        "JobStatusEnum": "apps.recruiting.models.JobStatus",
+        "FeedbackStatusEnum": "apps.recruiting.models.FeedbackStatus",
+        "ModerationEnum": "apps.recruiting.models.Moderation",
+        "AnalysisStatusEnum": ["queued", "running", "completed", "failed"],
     },
     "TAGS": [
         {"name": "System", "description": "Health and version"},
