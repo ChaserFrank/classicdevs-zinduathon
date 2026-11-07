@@ -11,7 +11,6 @@
     "api:types:check": "openapi-typescript ../backend/openapi.yaml --default-non-nullable false -o /tmp/skillproof-schema.d.ts && diff -q src/lib/api/schema.d.ts /tmp/skillproof-schema.d.ts",
     "predev": "npm run api:types",
     "dev": "vite",
-    "prebuild": "npm run api:types",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
