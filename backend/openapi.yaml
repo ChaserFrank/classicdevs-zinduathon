@@ -1,0 +1,114 @@
+openapi: 3.0.3
+info:
+  title: SkillProof API
+  version: 0.1.0
+  description: |-
+    SkillProof turns a developer's public GitHub history into an explained skill card: proven skills, a Signal Score built from five rule-based sub-scores, and the evidence behind each number. Recruiters search and give feedback; job seekers receive it in-app, by email and by SMS.
+
+    Conventions: JSON with camelCase keys, `Authorization: Bearer <access token>`, page-number pagination (`?page=&pageSize=`), errors shaped `{code, message, fields?}`.
+paths:
+  /api/v1/health:
+    get:
+      operationId: health_retrieve
+      description: Checks PostgreSQL and Redis. Returns 200 when both answer, 503
+        otherwise, plus the running version and commit so you can confirm what is
+        deployed.
+      summary: Health check
+      tags:
+      - System
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+              examples:
+                Healthy:
+                  value:
+                    status: ok
+                    checks:
+                      database: ok
+                      redis: ok
+                    version: 0.1.0
+                    commitSha: 59739f0
+                    time: '2026-11-07T10:00:00+03:00'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+          description: ''
+components:
+  schemas:
+    DependencyStatusEnum:
+      enum:
+      - ok
+      - down
+      type: string
+      description: |-
+        * `ok` - ok
+        * `down` - down
+    Health:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/HealthStatusEnum'
+        checks:
+          $ref: '#/components/schemas/HealthChecks'
+        version:
+          type: string
+        commitSha:
+          type: string
+        time:
+          type: string
+          format: date-time
+      required:
+      - checks
+      - commitSha
+      - status
+      - time
+      - version
+    HealthChecks:
+      type: object
+      properties:
+        database:
+          $ref: '#/components/schemas/DependencyStatusEnum'
+        redis:
+          $ref: '#/components/schemas/DependencyStatusEnum'
+      required:
+      - database
+      - redis
+    HealthStatusEnum:
+      enum:
+      - ok
+      - degraded
+      type: string
+      description: |-
+        * `ok` - ok
+        * `degraded` - degraded
+tags:
+- name: System
+  description: Health and version
+- name: Auth
+  description: Registration, sign-in, tokens, GitHub OAuth
+- name: Profile
+  description: The signed-in user's own data
+- name: Analyses
+  description: Run and read GitHub analyses and skill cards
+- name: Skills
+  description: Skill catalogue
+- name: Candidates
+  description: Recruiter search over job seekers
+- name: Jobs
+  description: Job postings and match scores
+- name: Shortlists
+  description: Recruiter shortlists
+- name: Feedback
+  description: Recruiter feedback to job seekers
+- name: Notifications
+  description: In-app inbox and preferences
+- name: Admin
+  description: Admin-only management API

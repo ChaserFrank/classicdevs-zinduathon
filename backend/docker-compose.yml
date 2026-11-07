@@ -1,0 +1,70 @@
+# Local development stack. `make services` starts only postgres/redis/mailpit (run Django from the
+# venv); `make dev` starts everything in containers.
+name: skillproof
+
+x-app: &app
+  build:
+    context: .
+    args:
+      REQUIREMENTS: dev
+  env_file:
+    - path: .env
+      required: false
+  environment:
+    DJANGO_SETTINGS_MODULE: config.settings.dev
+    DATABASE_URL: postgres://skillproof:skillproof@postgres:5432/skillproof
+    REDIS_URL: redis://redis:6379/0
+    EMAIL_HOST: mailpit
+    EMAIL_PORT: "1025"
+    CELERY_TASK_ALWAYS_EAGER: "false"
+  volumes:
+    - .:/app
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: skillproof
+      POSTGRES_USER: skillproof
+      POSTGRES_PASSWORD: skillproof
+    ports: ["${POSTGRES_HOST_PORT:-5433}:5432"]  # 5433 avoids clashing with a local Postgres
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skillproof -d skillproof"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  mailpit:
+    image: axllent/mailpit:v1.21
+    ports: ["1025:1025", "8025:8025"]  # SMTP, web UI at http://localhost:8025
+
+  web:
+    <<: *app
+    command: sh -c "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
+    ports: ["8000:8000"]
+
+  worker:
+    <<: *app
+    command: celery -A config worker --loglevel=INFO --concurrency=2
+
+  beat:
+    <<: *app
+    command: celery -A config beat --loglevel=INFO --schedule /tmp/celerybeat-schedule
+
+volumes:
+  pgdata:

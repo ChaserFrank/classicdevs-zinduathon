@@ -1,0 +1,37 @@
+[project]
+name = "skillproof-backend"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = [".venv", "staticfiles"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "DJ", "SIM", "S", "C4", "RUF"]
+ignore = ["RUF012"]  # DRF/Django class attributes (Meta.fields, permission_classes) are idiomatic
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106"]  # asserts and dummy passwords are fine in tests
+"config/settings/*.py" = ["F405", "F403"]
+"**/migrations/**" = ["E501", "RUF"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "config"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["test_*.py"]
+testpaths = ["tests"]
+addopts = "--strict-markers -p no:cacheprovider"
+filterwarnings = ["error::RuntimeWarning"]
+
+[tool.coverage.run]
+source = ["apps", "config"]
+omit = ["*/migrations/*", "config/wsgi.py", "config/asgi.py", "manage.py"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
