@@ -1,0 +1,7 @@
+{% extends "notifications/_base.html" %}
+{% block content %}
+<p>We couldn't finish the analysis of <strong>{{ login }}</strong>.</p>
+<p><strong>Reason:</strong> {{ reason }}</p>
+<p>Check that the GitHub account has public, non-fork repositories with code, then run the analysis again. If GitHub's rate limit was reached, wait an hour.</p>
+{% endblock %}
+{% block cta %}Try again{% endblock %}

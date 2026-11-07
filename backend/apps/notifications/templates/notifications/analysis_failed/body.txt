@@ -1,0 +1,12 @@
+{% autoescape off %}Hi {{ user.full_name|default:"there" }},
+
+We couldn't finish the analysis of {{ login }}.
+
+Reason: {{ reason }}
+
+What to do: check that the GitHub account has public, non-fork repositories with code, then run the analysis again. If GitHub's rate limit was reached, wait an hour.
+
+{% if link %}Open: {{ link }}
+
+{% endif %}--
+SkillProof. Change your notification settings in your account.{% endautoescape %}

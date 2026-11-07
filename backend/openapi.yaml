@@ -1387,6 +1387,180 @@ paths:
                     message: …
                   summary: permission_denied
           description: 'Not allowed: `permission_denied`'
+  /api/v1/me/notification-preferences:
+    get:
+      operationId: me_notification_preferences_retrieve
+      description: Matrix of notification kind × channel for your role. SMS is only
+        sent when `smsReady` is true (verified phone and SMS consent).
+      summary: My notification preferences
+      tags:
+      - Notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreferenceMatrix'
+              examples:
+                JobSeeker:
+                  value:
+                    matrix:
+                      analysisCompleted:
+                        inApp: true
+                        email: true
+                        sms: false
+                      recruiterFeedback:
+                        inApp: true
+                        email: true
+                        sms: true
+                    smsReady: true
+                  summary: Job seeker
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotAuthenticated:
+                  value:
+                    code: not_authenticated
+                    message: …
+                  summary: not_authenticated
+          description: 'Not signed in or token invalid: `not_authenticated`'
+    put:
+      operationId: me_notification_preferences_update
+      description: Send only the cells you change. Turning SMS or email on for feedback
+        also records the matching consent (Kenya DPA); turning every SMS kind off
+        withdraws SMS consent.
+      summary: Change notification preferences
+      tags:
+      - Notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreferenceUpdateRequest'
+            examples:
+              FeedbackBySMS:
+                value:
+                  preferences:
+                  - kind: recruiter_feedback
+                    channel: sms
+                    enabled: true
+                summary: Feedback by SMS
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PreferenceUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PreferenceUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreferenceMatrix'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ValidationError:
+                  value:
+                    code: validation_error
+                    message: …
+                  summary: validation_error
+          description: 'Bad request: `validation_error`'
+  /api/v1/notifications:
+    get:
+      operationId: notifications_list
+      summary: My inbox
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: pageSize
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: unread
+        schema:
+          type: boolean
+        description: Only unread notifications
+      tags:
+      - Notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNotificationList'
+          description: ''
+  /api/v1/notifications/{public_id}/read:
+    post:
+      operationId: notifications_read_create
+      summary: Mark a notification read
+      parameters:
+      - in: path
+        name: publicId
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                NotFound:
+                  value:
+                    code: not_found
+                    message: …
+                  summary: not_found
+          description: 'Not found: `not_found`'
+  /api/v1/notifications/read-all:
+    post:
+      operationId: notifications_read_all_create
+      summary: Mark all notifications read
+      tags:
+      - Notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadAll'
+          description: ''
   /api/v1/skills:
     get:
       operationId: skills_list
@@ -1430,6 +1604,72 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedSkillList'
           description: ''
+  /api/v1/webhooks/thrivewave/delivery:
+    post:
+      operationId: webhooks_thrivewave_delivery_create
+      description: Called by Thrivewave. Verified by `X-Thrivewave-Signature` (HMAC-SHA256
+        of the body with THRIVEWAVE_WEBHOOK_SECRET) or `X-Thrivewave-Secret`. Idempotent;
+        answers 200 quickly even for unknown message ids.
+      summary: Thrivewave delivery report (webhook)
+      tags:
+      - Notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAck'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `permission_denied`'
+  /api/v1/webhooks/thrivewave/inbound:
+    post:
+      operationId: webhooks_thrivewave_inbound_create
+      description: Replies of STOP (or UNSUBSCRIBE, END…) turn off every SMS preference
+        for the sender's number and record SMS consent as withdrawn. Other messages
+        are ignored.
+      summary: Thrivewave inbound SMS (webhook)
+      tags:
+      - Notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAck'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PermissionDenied:
+                  value:
+                    code: permission_denied
+                    message: …
+                  summary: permission_denied
+          description: 'Not allowed: `permission_denied`'
 components:
   schemas:
     AnalysisCreateRequest:
@@ -1753,6 +1993,16 @@ components:
       - iteration
       - ownership
       - quality
+    ChannelEnum:
+      enum:
+      - in_app
+      - email
+      - sms
+      type: string
+      description: |-
+        * `in_app` - in_app
+        * `email` - email
+        * `sms` - sms
     ClaimedSkill:
       type: object
       properties:
@@ -2078,6 +2328,78 @@ components:
         * `job_seeker` - Job seeker
         * `recruiter` - Recruiter
         * `admin` - Admin
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        kind:
+          $ref: '#/components/schemas/NotificationKindEnum'
+        title:
+          type: string
+          maxLength: 200
+        body:
+          type: string
+        linkPath:
+          type: string
+          description: Path on FRONTEND_URL
+          maxLength: 200
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - createdAt
+      - id
+      - kind
+      - title
+    NotificationKindEnum:
+      enum:
+      - analysis_completed
+      - analysis_failed
+      - recruiter_feedback
+      - recruiter_approved
+      - recruiter_rejected
+      - shortlisted
+      - profile_viewed_digest
+      type: string
+      description: |-
+        * `analysis_completed` - Analysis completed
+        * `analysis_failed` - Analysis failed
+        * `recruiter_feedback` - Recruiter feedback
+        * `recruiter_approved` - Recruiter approved
+        * `recruiter_rejected` - Recruiter rejected
+        * `shortlisted` - Shortlisted
+        * `profile_viewed_digest` - Weekly profile views
+    PaginatedNotificationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
     PaginatedSkillList:
       type: object
       required:
@@ -2180,6 +2502,70 @@ components:
           pattern: ^\s*\d{6}\s*$
       required:
       - code
+    PreferenceChangeKindEnum:
+      enum:
+      - analysis_completed
+      - analysis_failed
+      - recruiter_feedback
+      - recruiter_approved
+      - recruiter_rejected
+      - shortlisted
+      - profile_viewed_digest
+      type: string
+      description: |-
+        * `analysis_completed` - analysis_completed
+        * `analysis_failed` - analysis_failed
+        * `recruiter_feedback` - recruiter_feedback
+        * `recruiter_approved` - recruiter_approved
+        * `recruiter_rejected` - recruiter_rejected
+        * `shortlisted` - shortlisted
+        * `profile_viewed_digest` - profile_viewed_digest
+    PreferenceChangeRequest:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/PreferenceChangeKindEnum'
+        channel:
+          $ref: '#/components/schemas/ChannelEnum'
+        enabled:
+          type: boolean
+      required:
+      - channel
+      - enabled
+      - kind
+    PreferenceMatrix:
+      type: object
+      properties:
+        matrix:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: boolean
+          description: kind → channel → enabled. Only kinds for your role and channels
+            that exist.
+        smsReady:
+          type: boolean
+          description: Phone verified and SMS consent given.
+      required:
+      - matrix
+      - smsReady
+    PreferenceUpdateRequest:
+      type: object
+      properties:
+        preferences:
+          type: array
+          items:
+            $ref: '#/components/schemas/PreferenceChangeRequest'
+      required:
+      - preferences
+    ReadAll:
+      type: object
+      properties:
+        updated:
+          type: integer
+      required:
+      - updated
     RecruiterProfile:
       type: object
       properties:
@@ -2320,6 +2706,15 @@ components:
         * `unexplained_bulk` - unexplained_bulk
         * `tutorial_clone` - tutorial_clone
         * `unverified_claim` - unverified_claim
+    WebhookAck:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        updated:
+          type: boolean
+      required:
+      - ok
   securitySchemes:
     jwtAuth:
       type: http

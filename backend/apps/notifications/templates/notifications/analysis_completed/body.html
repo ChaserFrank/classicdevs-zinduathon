@@ -1,0 +1,8 @@
+{% extends "notifications/_base.html" %}
+{% block content %}
+<p>Your SkillProof analysis of <strong>{{ login }}</strong> is ready.</p>
+<p style="font-size:28px;font-weight:bold;margin:8px 0">{{ score }}<span style="font-size:15px;color:#666"> / 100 Signal Score</span></p>
+{% if top_skills %}<p>Top skills: {{ top_skills|join:", " }}</p>{% endif %}
+{% if tips %}<p style="margin-bottom:4px">Things that would raise it:</p><ul style="margin-top:4px">{% for tip in tips %}<li>{{ tip }}</li>{% endfor %}</ul>{% endif %}
+{% endblock %}
+{% block cta %}See your skill card{% endblock %}

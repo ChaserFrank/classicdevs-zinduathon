@@ -1,0 +1,1 @@
+{% autoescape off %}SkillProof: {{ company }} moved you to {{ stage_label }}{% if job_title %} for {{ job_title }}{% endif %}. See:{% endautoescape %}

@@ -1,0 +1,7 @@
+{% extends "notifications/_base.html" %}
+{% block content %}
+<p>We couldn't approve your recruiter account for <strong>{{ company }}</strong>.</p>
+{% if note %}<p><strong>Reason:</strong> {{ note }}</p>{% endif %}
+<p>If you think this is a mistake, reply to this email with details of your company and role.</p>
+{% endblock %}
+{% block cta %}View your account{% endblock %}
