@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkillProof dev sign-in</title>
+<style>
+  :root { --bg:#f7f7f5; --fg:#1a1a1a; --muted:#5c5c5c; --card:#fff; --line:#ddd; --accent:#0f766e; --bad:#b42318; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#141414; --fg:#eee; --muted:#aaa; --card:#1e1e1e; --line:#333; --accent:#2dd4bf; --bad:#f97066; } }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui, sans-serif; }
+  main { max-width:760px; margin:32px auto; padding:0 16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:20px; margin-bottom:16px; }
+  h1 { font-size:20px; margin:0 0 4px; } .muted { color:var(--muted); font-size:13px; }
+  label { display:block; font-weight:600; margin:14px 0 4px; }
+  textarea { width:100%; box-sizing:border-box; font:12px/1.4 ui-monospace, monospace; padding:8px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--fg); }
+  button, a.btn { background:var(--accent); color:#fff; border:0; border-radius:6px; padding:8px 14px; font-size:14px; cursor:pointer; text-decoration:none; display:inline-block; }
+  .bad { color:var(--bad); } pre { white-space:pre-wrap; word-break:break-word; font-size:12px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="card">
+    <h1>SkillProof · GitHub sign-in (development)</h1>
+    <p class="muted">This page stands in for the frontend's callback page. It only exists with dev settings.</p>
+    <p id="status">Working…</p>
+    <label for="link-token">Optional: an access token, to <em>link</em> GitHub to an existing account</label>
+    <textarea id="link-token" rows="2" placeholder="Paste an access token here before retrying, or leave empty to sign in"></textarea>
+  </div>
+  <div class="card" id="result" hidden>
+    <label for="access">Access token (paste into Swagger → Authorize)</label>
+    <textarea id="access" rows="4" readonly></textarea>
+    <p><button type="button" id="copy">Copy access token</button> <a class="btn" href="/api/v1/docs/">Open Swagger</a></p>
+    <label for="refresh">Refresh token</label>
+    <textarea id="refresh" rows="3" readonly></textarea>
+    <label>User</label>
+    <pre id="user"></pre>
+  </div>
+  <p class="muted"><a href="/api/v1/auth/github/dev-login">Start again as a job seeker</a></p>
+</main>
+{{ code|json_script:"oauth-code" }}{{ state|json_script:"oauth-state" }}{{ error|json_script:"oauth-error" }}
+<script>
+(function () {
+  const code = JSON.parse(document.getElementById("oauth-code").textContent);
+  const state = JSON.parse(document.getElementById("oauth-state").textContent);
+  const error = JSON.parse(document.getElementById("oauth-error").textContent);
+  const status = document.getElementById("status");
+  const fail = (msg) => { status.textContent = msg; status.className = "bad"; };
+  const cookie = (document.cookie.split("; ").find(c => c.startsWith("sp_oauth_state=")) || "").split("=").slice(1).join("=");
+
+  if (error) return fail("GitHub said: " + error);
+  if (!code || !state) return fail("Missing code or state. Start again.");
+  if (cookie && decodeURIComponent(cookie) !== state) return fail("State mismatch: this sign-in was not started from this browser.");
+
+  const headers = { "Content-Type": "application/json" };
+  const linkToken = document.getElementById("link-token").value.trim();
+  if (linkToken) headers["Authorization"] = "Bearer " + linkToken;
+
+  fetch("/api/v1/auth/github/callback", { method: "POST", headers, body: JSON.stringify({ code, state }) })
+    .then(r => r.json().then(body => ({ ok: r.ok, body })))
+    .then(({ ok, body }) => {
+      if (!ok) return fail(body.code + ": " + body.message);
+      document.cookie = "sp_oauth_state=; Max-Age=0; path=/";
+      status.textContent = body.created ? "Account created and signed in." : "Signed in.";
+      document.getElementById("access").value = body.access;
+      document.getElementById("refresh").value = body.refresh;
+      document.getElementById("user").textContent = JSON.stringify(body.user, null, 2);
+      document.getElementById("result").hidden = false;
+    })
+    .catch(() => fail("Could not reach the API."));
+
+  document.getElementById("copy").addEventListener("click", () => {
+    navigator.clipboard.writeText(document.getElementById("access").value);
+  });
+})();
+</script>
+</body>
+</html>

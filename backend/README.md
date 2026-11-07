@@ -5,7 +5,7 @@ public GitHub history into an explained skill card: proven skills, a Signal Scor
 five rule-based sub-scores, and the evidence behind every number. Recruiters search, shortlist and
 send feedback; job seekers receive it in-app, by email and by SMS (Thrivewave).
 
-> Status: **Phase 1 (foundation)** complete. See `docs/DECISIONS.md` and `../TESTING_LOG.md`.
+> Status: **Phases 1–2** complete (foundation; accounts and auth). See `docs/DECISIONS.md` and `../TESTING_LOG.md`.
 
 ## Quick start (venv + Docker services) — recommended for development
 
@@ -35,6 +35,7 @@ Web on :8000 (with a Celery worker and beat), Mailpit UI at http://localhost:802
 | http://localhost:8000/api/v1/redoc/ | ReDoc |
 | http://localhost:8000/api/v1/schema/ | OpenAPI 3 schema |
 | http://localhost:8000/django-admin/ | Django admin (`python manage.py createsuperuser`) |
+| http://localhost:8000/api/v1/auth/github/dev-login | Dev-only GitHub sign-in page (see `docs/AUTH.md`) |
 
 ## Everyday commands
 
@@ -50,9 +51,10 @@ Web on :8000 (with a Celery worker and beat), Mailpit UI at http://localhost:802
 ```
 config/            settings (base, dev, test, prod), urls, celery, wsgi/asgi
 apps/core/         base models, audit log, error handler, pagination, request id, health
-apps/accounts/     custom User (email login, roles) — profiles and auth arrive in Phase 2
+apps/accounts/     User, profiles, consents, JWT, email/phone verification, GitHub OAuth
+apps/companies/    companies, recruiter profiles and approval
 tests/             mirrors apps/; fixtures/github/ for recorded GitHub API responses
-docs/              DECISIONS.md, TESTING.md (the remaining docs arrive with their phases)
+docs/              AUTH.md, DECISIONS.md, TESTING.md (more arrive with their phases)
 ```
 
 ## API conventions

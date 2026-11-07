@@ -78,3 +78,132 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     @property
     def is_phone_verified(self) -> bool:
         return self.phone_verified_at is not None
+
+
+class JobSeekerProfile(TimeStampedModel):
+    """Job-seeker-only fields. 1:1 with User so the user table stays role-neutral."""
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="job_seeker_profile")
+    headline = models.CharField(max_length=160, blank=True)
+    location = models.CharField(max_length=120, blank=True)
+    card_visible = models.BooleanField(
+        default=True, help_text="Recruiters can find and view this card."
+    )
+    open_to_work = models.BooleanField(default=True)
+
+    def __str__(self) -> str:
+        return f"Job seeker {self.user.email}"
+
+
+class GithubAccount(TimeStampedModel):
+    """The GitHub identity proven by OAuth. A job seeker's analysed login comes from here, which is
+    what makes `verifiedOwner` true on their card."""
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="github_account")
+    github_id = models.BigIntegerField(unique=True)
+    login = models.CharField(max_length=39, unique=True, help_text="Lowercase GitHub login")
+    avatar_url = models.URLField(max_length=500, blank=True)
+    # Fernet ciphertext; use set_token()/get_token(). Never logged, never returned by the API.
+    access_token_encrypted = models.TextField(blank=True)
+    token_scopes = models.CharField(max_length=255, blank=True)
+    connected_at = models.DateTimeField(default=timezone.now)
+    last_synced_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self) -> str:
+        return self.login
+
+    def save(self, *args, **kwargs):
+        self.login = (self.login or "").lower()
+        super().save(*args, **kwargs)
+
+    def set_token(self, token: str) -> None:
+        from apps.core.crypto import encrypt
+
+        self.access_token_encrypted = encrypt(token)
+
+    def get_token(self) -> str:
+        from apps.core.crypto import decrypt
+
+        return decrypt(self.access_token_encrypted)
+
+
+class ConsentType(models.TextChoices):
+    TERMS = "terms", "Terms of service"
+    PRIVACY = "privacy", "Privacy policy"
+    SMS_FEEDBACK = "sms_feedback", "Feedback by SMS"
+    EMAIL_FEEDBACK = "email_feedback", "Feedback by email"
+
+
+class ConsentRecord(models.Model):
+    """Append-only consent history (Kenya Data Protection Act 2019): we can show when each consent
+    was given or withdrawn and under which policy version. The latest row per type wins."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="consents")
+    consent_type = models.CharField(max_length=20, choices=ConsentType.choices)
+    granted = models.BooleanField()
+    policy_version = models.CharField(max_length=32)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(consent_type__in=ConsentType.values),
+                name="accounts_consent_type_valid",
+            )
+        ]
+        indexes = [
+            models.Index(
+                fields=("user", "consent_type", "-created_at"), name="accounts_consent_idx"
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.user_id} {self.consent_type}={self.granted}"
+
+    def save(self, *args, **kwargs):
+        if self.pk is not None:
+            raise ValueError("Consent records are append-only; add a new row instead.")
+        super().save(*args, **kwargs)
+
+
+class VerificationPurpose(models.TextChoices):
+    VERIFY_EMAIL = "verify_email", "Verify email"
+    VERIFY_PHONE = "verify_phone", "Verify phone"
+    RESET_PASSWORD = "reset_password", "Reset password"
+
+
+class VerificationCode(TimeStampedModel):
+    """Short codes sent by SMS. Only an HMAC of the code is stored, so a database leak doesn't
+    reveal live codes. Email links use signed tokens instead (see tokens.py)."""
+
+    MAX_ATTEMPTS = 5
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="verification_codes")
+    purpose = models.CharField(max_length=20, choices=VerificationPurpose.choices)
+    code_hash = models.CharField(max_length=64)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(purpose__in=VerificationPurpose.values),
+                name="accounts_verification_purpose_valid",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(attempts__gte=0) & models.Q(attempts__lte=5),
+                name="accounts_verification_attempts_range",
+            ),
+        ]
+        indexes = [models.Index(fields=("user", "purpose", "-created_at"), name="accounts_vc_idx")]
+
+    @property
+    def is_usable(self) -> bool:
+        return (
+            self.used_at is None
+            and self.attempts < self.MAX_ATTEMPTS
+            and self.expires_at > timezone.now()
+        )

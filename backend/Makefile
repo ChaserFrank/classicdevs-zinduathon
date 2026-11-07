@@ -44,7 +44,7 @@ schema-check: ## Fail if openapi.yaml is out of date
 	$(MANAGE) spectacular --file /tmp/openapi.check.yaml --validate --fail-on-warn && diff -u openapi.yaml /tmp/openapi.check.yaml
 
 deploy-check: ## Django deployment checklist with production settings
-	DJANGO_SETTINGS_MODULE=config.settings.prod DJANGO_SECRET_KEY=$$(python3 -c "import secrets;print(secrets.token_urlsafe(50))") DJANGO_ALLOWED_HOSTS=api.example.com $(MANAGE) check --deploy --fail-level WARNING
+	DJANGO_SETTINGS_MODULE=config.settings.prod DJANGO_SECRET_KEY=$$(python3 -c "import secrets;print(secrets.token_urlsafe(50))") DJANGO_ALLOWED_HOSTS=api.example.com FIELD_ENCRYPTION_KEY=$$($(PY) -c "from cryptography.fernet import Fernet;print(Fernet.generate_key().decode())") $(MANAGE) check --deploy --fail-level WARNING
 
 seed: ## Load demo data (available from Phase 6)
 	$(MANAGE) seed_demo

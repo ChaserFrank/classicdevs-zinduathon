@@ -57,3 +57,46 @@ The 60/hour anonymous throttle would lock judges out of Swagger quickly at a sha
 
 Large wheel downloads timed out on a slow connection during the first build. `PIP_DEFAULT_TIMEOUT`
 and `PIP_RETRIES` make builds survive venue Wi-Fi. CI also builds the image on every push.
+
+## D-011 Dev-only GitHub sign-in pages (Phase 2)
+
+There is no frontend yet, and GitHub must redirect the browser somewhere. `/auth/github/dev-login`
+and `/auth/github/dev-callback` act as the frontend's callback page so OAuth can be tested from a
+browser and Swagger. They are excluded from the schema and return 404 unless
+`GITHUB_DEV_CALLBACK_ENABLED` (dev settings only). Production settings never enable them.
+
+## D-012 Phone codes echoed as `devCode` in local development (Phase 2)
+
+Until Thrivewave is wired up, SMS is dry-run and codes go nowhere. Dev settings set
+`SMS_DEV_ECHO_CODES` so the send-code response includes the code. Codes are still never logged, and
+the flag is off in test and production settings.
+
+## D-013 Email links use signed tokens; only SMS codes use the VerificationCode table (Phase 2)
+
+Email verification links are signed (Django `signing`, 3 days, bound to the address). Password reset
+signs Django's own token generator output, which is single-use because it hashes the password. Both
+are stateless, so nothing needs cleaning up. SMS codes are short and guessable, so they need stored
+state (HMAC, expiry, attempt counter).
+
+## D-014 New error codes (Phase 2)
+
+Added to the brief's list: `invalid_credentials`, `state_invalid`, `github_oauth_failed`,
+`github_email_unverified`, `github_already_linked`, `github_not_configured`, `password_required`,
+`terms_required`, `recruiter_signup_requires_email`, `phone_missing`, `code_invalid`,
+`code_attempts_exceeded`. Each is documented on its endpoint in Swagger.
+
+## D-015 GitHub sign-up creates job seekers only (Phase 2)
+
+The brief says recruiters "link only" via GitHub. A recruiter needs a company and admin approval,
+which the GitHub flow can't collect, so recruiter sign-up stays email-based.
+
+## D-016 Pre-registered email accounts are reclaimed on GitHub sign-in (Phase 2)
+
+If someone registered an address they don't own (never verified), and the real owner later signs in
+with GitHub (whose verified primary email matches), we link GitHub and remove the squatter's
+password, then sign everyone out of that account. Without this, the squatter could keep access.
+
+## D-017 Consent: one "terms" checkbox records both terms and privacy (Phase 2)
+
+The register form has one required checkbox for the terms and privacy policy, stored as two
+`ConsentRecord` rows. Feedback-by-email and feedback-by-SMS consents default to false (opt-in).

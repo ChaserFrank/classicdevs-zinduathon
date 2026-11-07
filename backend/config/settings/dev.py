@@ -20,3 +20,13 @@ LOGGING["handlers"]["console"]["formatter"] = env_str("LOG_FORMAT", "text")
 # Serve static files from app directories without running collectstatic first.
 WHITENOISE_AUTOREFRESH = True
 WHITENOISE_USE_FINDERS = True
+
+# Dev conveniences (see docs/DECISIONS.md D-011/D-012). Production never sets these.
+from apps.core.crypto import derive_dev_key  # noqa: E402
+
+FIELD_ENCRYPTION_KEY = FIELD_ENCRYPTION_KEY or derive_dev_key(SECRET_KEY)
+GITHUB_DEV_CALLBACK_ENABLED = env_bool("GITHUB_DEV_CALLBACK_ENABLED", True)
+GITHUB_OAUTH_REDIRECT_URI = env_str(
+    "GITHUB_OAUTH_REDIRECT_URI", "http://localhost:8000/api/v1/auth/github/dev-callback"
+)
+SMS_DEV_ECHO_CODES = SMS_DRY_RUN

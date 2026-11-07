@@ -5,6 +5,7 @@ the same code runs on a laptop, in CI and on Render/Railway. Environment-specifi
 prod) only override what they must.
 """
 
+from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
@@ -45,6 +46,7 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     "apps.core",
     "apps.accounts",
+    "apps.companies",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -101,6 +103,51 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
+
+# Access tokens are short-lived (kept in memory by the SPA); refresh tokens rotate and the old one
+# is blacklisted, so a stolen refresh token works at most once.
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=env_int("JWT_ACCESS_MINUTES", 15)),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=env_int("JWT_REFRESH_DAYS", 7)),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": True,
+    "USER_ID_FIELD": "public_id",  # tokens never contain internal ids
+    "USER_ID_CLAIM": "user_id",
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
+# Fernet key for GitHub tokens at rest. Required in production (deploy check skillproof.E001).
+FIELD_ENCRYPTION_KEY = env_str("FIELD_ENCRYPTION_KEY")
+
+# Version of the terms/privacy text users consent to; stored on every ConsentRecord.
+POLICY_VERSION = env_str("POLICY_VERSION", "2026-11-v1")
+EMAIL_VERIFICATION_MAX_AGE = 60 * 60 * 24 * 3  # 3 days
+PASSWORD_RESET_TIMEOUT = 60 * 60  # 1 hour (used by Django's token generator and our links)
+PHONE_CODE_TTL_MINUTES = 10
+
+# GitHub OAuth (web flow). The redirect URI must match the OAuth app's callback URL exactly.
+GITHUB_OAUTH_CLIENT_ID = env_str("GITHUB_OAUTH_CLIENT_ID")
+GITHUB_OAUTH_CLIENT_SECRET = env_str("GITHUB_OAUTH_CLIENT_SECRET")
+GITHUB_OAUTH_REDIRECT_URI = env_str(
+    "GITHUB_OAUTH_REDIRECT_URI", f"{FRONTEND_URL}/auth/github/callback"
+)
+GITHUB_OAUTH_SCOPES = "read:user user:email"
+# Backend-hosted sign-in test page (no frontend yet). Never enabled in production settings.
+GITHUB_DEV_CALLBACK_ENABLED = False
+
+# SMS (Thrivewave adapter arrives in Phase 4). Dry run by default: nothing is sent.
+SMS_DRY_RUN = env_bool("SMS_DRY_RUN", True)
+# Dev convenience: return phone codes in the API response while SMS is dry-run. Dev settings only.
+SMS_DEV_ECHO_CODES = False
+THRIVEWAVE_BASE_URL = env_str("THRIVEWAVE_BASE_URL")
+THRIVEWAVE_API_KEY = env_str("THRIVEWAVE_API_KEY")
+THRIVEWAVE_USERNAME = env_str("THRIVEWAVE_USERNAME")
+THRIVEWAVE_SENDER_ID = env_str("THRIVEWAVE_SENDER_ID")
+THRIVEWAVE_SMS_PATH = env_str("THRIVEWAVE_SMS_PATH", "/sms/send")
+THRIVEWAVE_WEBHOOK_SECRET = env_str("THRIVEWAVE_WEBHOOK_SECRET")
+
+DEFAULT_FROM_EMAIL = env_str("DEFAULT_FROM_EMAIL", "SkillProof <no-reply@skillproof.app>")
 
 # --- Internationalisation -------------------------------------------------------------------------
 LANGUAGE_CODE = "en-gb"

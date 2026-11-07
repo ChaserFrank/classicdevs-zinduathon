@@ -7,6 +7,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 
 api_v1 = [
     path("", include("apps.core.urls")),
+    path("", include("apps.accounts.urls")),
     # Docs are not throttled: judges and teammates browse them a lot at the venue.
     path("schema/", SpectacularAPIView.as_view(throttle_classes=[]), name="schema"),
     path(

@@ -65,6 +65,7 @@ jobs:
           DJANGO_SETTINGS_MODULE: config.settings.prod
           DJANGO_SECRET_KEY: ci-dummy-secret-key-that-is-long-enough-0123456789-abcdefghijkl
           DJANGO_ALLOWED_HOSTS: api.example.com
+          FIELD_ENCRYPTION_KEY: kY2ZpT0m2C7Qw3l3cX1H4b7mJ6eYw0b8n2nZbqk7x0A=
 
       - name: Tests with coverage
         run: pytest --cov --cov-report=term-missing --cov-report=xml

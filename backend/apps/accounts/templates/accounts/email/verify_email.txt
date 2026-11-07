@@ -1,0 +1,9 @@
+Hi {{ user.full_name|default:"there" }},
+
+Confirm your email address for SkillProof by opening this link (valid for 3 days):
+
+{{ link }}
+
+If you did not create a SkillProof account, ignore this email.
+
+SkillProof
