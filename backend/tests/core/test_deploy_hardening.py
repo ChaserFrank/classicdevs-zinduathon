@@ -80,3 +80,12 @@ def test_prod_refuses_to_start_without_secret_key():
     )
     assert result.returncode != 0
     assert "DJANGO_SECRET_KEY must be set" in result.stderr
+
+
+def test_health_carries_cors_headers_for_the_frontend(client, settings):
+    """Regression: the health middleware once answered before CorsMiddleware, so browsers
+    couldn't read /health from the frontend origin."""
+    settings.CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
+    response = client.get("/api/v1/health", HTTP_ORIGIN="http://localhost:5173")
+    assert response.status_code == 200
+    assert response["Access-Control-Allow-Origin"] == "http://localhost:5173"

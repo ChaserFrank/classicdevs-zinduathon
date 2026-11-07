@@ -519,8 +519,17 @@ published online. Build the adapter so only one function changes when we get the
 
 ```python
 class ThrivewaveClient:
-    def __init__(self, base_url, api_key, sender_id, *, username=None, sms_path="/sms/send",
-                 timeout=10, session=None): ...
+    def __init__(
+        self,
+        base_url,
+        api_key,
+        sender_id,
+        *,
+        username=None,
+        sms_path="/sms/send",
+        timeout=10,
+        session=None,
+    ): ...
 
     def build_payload(self, to_e164: str, message: str) -> tuple[dict, dict]:
         """Return (headers, json_body). THE ONLY PLACE THAT KNOWS THRIVEWAVE'S REQUEST FORMAT.

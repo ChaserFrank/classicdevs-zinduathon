@@ -27,3 +27,8 @@ SMS_DRY_RUN = True
 GITHUB_TOKEN = "test-github-token"  # noqa: S105
 ANALYSIS_FETCH_WORKERS = 1  # sequential: worker threads can't see the test transaction
 LLM_API_KEY = ""
+
+# Tests must not depend on a developer's backend/.env (base.py loads it for convenience).
+FRONTEND_URL = "http://localhost:3000"
+CORS_ALLOWED_ORIGINS = ["http://localhost:3000"]
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS

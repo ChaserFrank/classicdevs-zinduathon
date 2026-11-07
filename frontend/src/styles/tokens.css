@@ -1,0 +1,29 @@
+/*
+ * SkillProof design tokens (docs/DESIGN.md). Stored as "R G B" so Tailwind can add alpha:
+ * bg-flare/30 → rgb(var(--flare) / 0.3). Hex values are noted beside each.
+ */
+:root {
+  --void: 5 5 7; /* #050507 page background */
+  --void-2: 11 11 16; /* #0B0B10 raised surface behind glass */
+  --planet: 23 10 40; /* #170A28 planet body (sampled #15051C, nudged violet) */
+  --planet-2: 42 23 69; /* #2A1745 planet body highlight */
+  --flare: 255 122 26; /* #FF7A1A primary accent (sampled hue 24°) */
+  --flare-hot: 255 177 92; /* #FFB15C rim highlight, hover (sampled #E09155) */
+  --ember: 194 65 12; /* #C2410C deep glow edge (sampled #94410D) */
+  --ink: 245 245 247; /* #F5F5F7 primary text */
+  --mist: 160 160 172; /* #A0A0AC secondary text (raised from #8E8E9A for AA on glass) */
+  --ok: 74 222 128; /* #4ADE80 */
+  --warn: 251 191 36; /* #FBBF24 */
+  --bad: 248 113 113; /* #F87171 */
+
+  --line: rgba(255, 255, 255, 0.1);
+  --glass-panel: rgba(18, 18, 24, 0.55);
+  --glass-card: rgba(255, 255, 255, 0.04);
+  --glass-pill: rgba(20, 20, 26, 0.7);
+  --glass-fallback: rgba(11, 11, 16, 0.92);
+
+  /* 0–1: how strongly the SpaceBackdrop glow burns (ProgressGlow raises it while an analysis runs). */
+  --glow-strength: 0.55;
+
+  color-scheme: dark;
+}
