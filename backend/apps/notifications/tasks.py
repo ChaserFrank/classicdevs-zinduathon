@@ -84,3 +84,39 @@ def deliver(delivery_id: int) -> None:
         logger.info(
             "Delivery dry run", extra={"delivery": delivery.pk, "channel": delivery.channel}
         )
+
+
+@shared_task(ignore_result=True)
+def send_profile_view_digest() -> int:
+    """Monday 08:00 Africa/Nairobi: tell job seekers how many recruiters viewed their card in the
+    last 7 days. Nobody is notified about a week with no views."""
+    from datetime import timedelta
+
+    from django.db.models import Count, Q
+
+    from apps.accounts.models import JobSeekerProfile
+
+    from .models import Kind
+    from .services import notify
+
+    since = timezone.now() - timedelta(days=7)
+    profiles = (
+        JobSeekerProfile.objects.filter(user__is_active=True)
+        .annotate(
+            views_count=Count(
+                "views__recruiter", filter=Q(views__viewed_at__gte=since), distinct=True
+            )
+        )
+        .filter(views_count__gt=0)
+        .select_related("user")
+    )
+    sent = 0
+    for profile in profiles:
+        notify(
+            profile.user,
+            Kind.PROFILE_VIEWED_DIGEST,
+            {"views": profile.views_count},
+            link_path="/dashboard",
+        )
+        sent += 1
+    return sent

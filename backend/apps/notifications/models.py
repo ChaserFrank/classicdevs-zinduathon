@@ -89,7 +89,7 @@ class Provider(models.TextChoices):
     THRIVEWAVE = "thrivewave", "Thrivewave"
 
 
-class Delivery(TimeStampedModel):
+class Delivery(PublicIdModel):
     MAX_ATTEMPTS = 3
 
     notification = models.ForeignKey(

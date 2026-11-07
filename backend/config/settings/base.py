@@ -9,6 +9,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
+from celery.schedules import crontab
 from dotenv import load_dotenv
 
 from .env import env_bool, env_int, env_list, env_str
@@ -51,6 +52,7 @@ LOCAL_APPS = [
     "apps.analysis",
     "apps.notifications",
     "apps.recruiting",
+    "apps.adminpanel",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -198,7 +200,18 @@ CELERY_TASK_EAGER_PROPAGATES = True
 CELERY_TASK_ACKS_LATE = True
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TIMEZONE = TIME_ZONE
-CELERY_BEAT_SCHEDULE: dict = {}
+CELERY_BEAT_SCHEDULE = {
+    "weekly-profile-view-digest": {
+        "task": "apps.notifications.tasks.send_profile_view_digest",
+        "schedule": crontab(
+            hour=8, minute=0, day_of_week="mon"
+        ),  # Africa/Nairobi (CELERY_TIMEZONE)
+    },
+    "daily-retention": {
+        "task": "apps.core.tasks.apply_retention",
+        "schedule": crontab(hour=3, minute=0),
+    },
+}
 
 # --- CORS / CSRF ----------------------------------------------------------------------------------
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
@@ -289,6 +302,10 @@ SPECTACULAR_SETTINGS = {
         "FeedbackStatusEnum": "apps.recruiting.models.FeedbackStatus",
         "ModerationEnum": "apps.recruiting.models.Moderation",
         "AnalysisStatusEnum": ["queued", "running", "completed", "failed"],
+        "SkillCategoryEnum": "apps.skills.models.Category",
+        "CardSkillCategoryEnum": ["Language", "Framework", "Practice", "Tool"],
+        "RoleEnum": "apps.accounts.models.Role",
+        "SignupRoleEnum": ["job_seeker", "recruiter"],
     },
     "TAGS": [
         {"name": "System", "description": "Health and version"},

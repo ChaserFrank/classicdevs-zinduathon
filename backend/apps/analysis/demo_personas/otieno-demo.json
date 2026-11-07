@@ -1,0 +1,26 @@
+{
+  "login": "otieno-demo",
+  "id": 6,
+  "name": "Otieno Ouma",
+  "note": "Node.js developer: Express + MongoDB API with Jest tests, a NestJS service contributed with a team (low ownership).",
+  "repos": [
+    {
+      "id": 1101, "name": "boda-dispatch-api",
+      "languages": {"JavaScript": 45000},
+      "commit_series": [{"start": "2026-02-01T09:00:00+00:00", "count": 30, "every_days": 7, "additions": 100, "deletions": 30}],
+      "total_commits": 34,
+      "tree": ["package.json", "src/server.js", "__tests__/rides.test.js", ".env.example", "README.md"],
+      "files": {"package.json": "{\"dependencies\": {\"express\": \"^4\", \"mongoose\": \"^8\"}, \"devDependencies\": {\"jest\": \"^29\"}}"},
+      "readme_size": 1500
+    },
+    {
+      "id": 1102, "name": "chama-ledger",
+      "languages": {"TypeScript": 60000},
+      "commit_series": [{"start": "2026-04-01T09:00:00+00:00", "count": 14, "every_days": 6, "additions": 80, "deletions": 20}],
+      "total_commits": 120,
+      "tree": ["package.json", "src/main.ts", "src/ledger.spec.ts", ".github/workflows/ci.yml"],
+      "files": {"package.json": "{\"dependencies\": {\"@nestjs/core\": \"^10\", \"pg\": \"^8\"}, \"devDependencies\": {\"jest\": \"^29\"}}"},
+      "readme_size": 900
+    }
+  ]
+}

@@ -26,4 +26,5 @@ urlpatterns = [
     path("auth/phone/send-code", views.PhoneSendCodeView.as_view(), name="auth-phone-send-code"),
     path("auth/phone/verify", views.PhoneVerifyView.as_view(), name="auth-phone-verify"),
     path("me", views.MeView.as_view(), name="me"),
+    path("me/export", views.MeExportView.as_view(), name="me-export"),
 ]

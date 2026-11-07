@@ -226,3 +226,28 @@ Being saved to a shortlist is private. The job seeker hears about it only when t
 A view is recorded when an approved recruiter opens `/candidates/{login}` or the public card while
 signed in, at most once per recruiter per job seeker per hour. `/me/profile-views` returns distinct
 recruiters this week and per week for 8 weeks, never names.
+
+## D-038 Demo personas live in the app and run through the real pipeline (Phase 6)
+
+`seed_demo` must work on a fresh deploy without network access to GitHub. Six personas
+(`apps/analysis/demo_personas/`, fictional `*-demo` logins so no real account is implied) are
+served by `demo.ReplaySession`, so the cards are produced by the real rules, not hand-written
+numbers. Tests use the same route table through `responses`.
+
+## D-039 Demo data never sends email or SMS (Phase 6)
+
+`notifications.services.outbound_muted()` makes `notify()` create in-app notifications only and
+record email/SMS deliveries as skipped. `seed_demo` runs inside it, so a production seed can't
+email made-up addresses.
+
+## D-040 Admin API ids and extras (Phase 6)
+
+Deliveries got a `public_id` (three-step migration for existing rows). Dependency mappings are
+addressed by their natural key `{ecosystem}/{package}`; audit entries by filters only. Admins
+can't suspend or re-role themselves via the API, and can't self-delete (another admin removes
+them). Held feedback has API endpoints as well as Django admin actions.
+
+## D-041 Account deletion confirmation (Phase 6)
+
+Accounts with a password confirm with it. GitHub-only accounts confirm by having signed in within
+the last 10 minutes (the frontend sends them through GitHub sign-in again before deleting).
