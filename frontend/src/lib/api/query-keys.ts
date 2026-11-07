@@ -2,4 +2,5 @@
 export const qk = {
   health: ["health"] as const,
   me: ["me"] as const,
+  skills: (search: string) => ["skills", search] as const,
 };

@@ -43,9 +43,11 @@ export const tokens = {
 type Listener = () => void;
 const listeners = new Set<Listener>();
 export const sessionEvents = {
-  onEnded(listener: Listener) {
+  onEnded(listener: Listener): () => void {
     listeners.add(listener);
-    return () => listeners.delete(listener);
+    return () => {
+      listeners.delete(listener);
+    };
   },
   ended() {
     listeners.forEach((l) => l());

@@ -25,6 +25,13 @@ export default {
       fontFamily: { sans: ['"Plus Jakarta Sans"', "system-ui", "sans-serif"] },
       borderRadius: { glass: "24px", card: "16px" },
       letterSpacing: { tightest: "-0.02em" },
+      keyframes: {
+        "fade-in": { from: { opacity: "0" }, to: { opacity: "1" } },
+        "dialog-in": {
+          from: { opacity: "0", transform: "translate(-50%, -48%) scale(0.96)" },
+          to: { opacity: "1", transform: "translate(-50%, -50%) scale(1)" },
+        },
+      },
       boxShadow: {
         float: "0 24px 60px -12px rgba(0,0,0,0.65), 0 8px 24px -8px rgba(0,0,0,0.5)",
         "inner-hi": "inset 0 1px 0 0 rgba(255,255,255,0.08)",
