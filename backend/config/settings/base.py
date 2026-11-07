@@ -217,7 +217,9 @@ CELERY_BEAT_SCHEDULE = {
 
 # --- CORS / CSRF ----------------------------------------------------------------------------------
 # Vite dev server (frontend/) on 5173; 3000 kept for other local frontends.
-CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000")
+CORS_ALLOWED_ORIGINS = env_list(
+    "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000"
+)
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 CORS_EXPOSE_HEADERS = ["Content-Disposition", "X-Request-ID"]
 CORS_ALLOW_HEADERS = (
