@@ -7,6 +7,8 @@
 """
 
 import logging
+from contextlib import contextmanager
+from contextvars import ContextVar
 
 from django.conf import settings
 from django.db import transaction
@@ -98,7 +100,23 @@ def _preference(user, kind: str, channel: str) -> bool:
     return default_enabled(kind, channel, _consents(user))
 
 
+_muted: ContextVar[bool] = ContextVar("notifications_muted", default=False)
+
+
+@contextmanager
+def outbound_muted():
+    """In-app notifications only; email/SMS deliveries are recorded as skipped. Used by
+    seed_demo so demo data never emails or texts made-up addresses."""
+    token = _muted.set(True)
+    try:
+        yield
+    finally:
+        _muted.reset(token)
+
+
 def _skip_reason(user, kind: str, channel: str) -> str | None:
+    if _muted.get():
+        return "outbound muted (demo data)"
     if channel not in CHANNELS[kind]:
         return "channel not used for this kind"
     if not _preference(user, kind, channel):

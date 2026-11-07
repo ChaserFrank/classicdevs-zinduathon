@@ -17,12 +17,14 @@ pytestmark = pytest.mark.django_db
 def test_completed_analysis_notifies_job_seeker(django_capture_on_commit_callbacks):
     user = JobSeekerFactory()
     record_consents(user, {"terms": True, "email_feedback": True})
-    analysis = Analysis.objects.create(github_login="amina-dev", job_seeker=user.job_seeker_profile)
+    analysis = Analysis.objects.create(
+        github_login="amina-demo", job_seeker=user.job_seeker_profile
+    )
     with (
         freeze_time("2026-11-07 12:00"),
         responses.RequestsMock(assert_all_requests_are_fired=False) as rsps,
     ):
-        register_persona(rsps, load_persona("amina-dev"))
+        register_persona(rsps, load_persona("amina-demo"))
         with django_capture_on_commit_callbacks(execute=True):
             pipeline.run(analysis)
     note = Notification.objects.get(user=user)

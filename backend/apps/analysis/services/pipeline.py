@@ -51,7 +51,7 @@ def _set_progress(analysis, step: int) -> None:
     analysis.save(update_fields=["progress_step", "updated_at"])
 
 
-def run(analysis) -> None:
+def run(analysis, client: GithubClient | None = None) -> None:
     """Run an analysis to completion or failure. Never raises for expected GitHub errors."""
     from apps.analysis.models import AnalysisStatus
 
@@ -60,7 +60,7 @@ def run(analysis) -> None:
     analysis.progress_step = 1
     analysis.save(update_fields=["status", "started_at", "progress_step", "updated_at"])
     try:
-        client = GithubClient(
+        client = client or GithubClient(
             _token_for(analysis),
             base_url=settings.GITHUB_API_URL,
             cache=DbCache(settings.GITHUB_CACHE_TTL_HOURS),

@@ -1,0 +1,33 @@
+{
+  "login": "chebet-demo",
+  "id": 3,
+  "name": "Chebet Kiprono",
+  "note": "Data scientist: long-running ML project with tests and CI, a FastAPI model server, a Kaggle notebook.",
+  "repos": [
+    {
+      "id": 801, "name": "maize-yield-model",
+      "languages": {"Python": 70000, "Jupyter Notebook": 30000},
+      "commit_series": [{"start": "2025-12-01T08:00:00+00:00", "count": 40, "every_days": 8, "additions": 120, "deletions": 35}],
+      "total_commits": 42,
+      "tree": ["pyproject.toml", "src/model.py", "tests/test_model.py", ".github/workflows/test.yml", "README.md"],
+      "files": {"pyproject.toml": "[project]\ndependencies = [\"pandas\", \"numpy\", \"scikit-learn\", \"torch\"]\n[dependency-groups]\ndev = [\"pytest\"]\n"},
+      "readme_size": 2400
+    },
+    {
+      "id": 802, "name": "model-server",
+      "languages": {"Python": 15000, "Dockerfile": 300},
+      "commit_series": [{"start": "2026-05-10T08:00:00+00:00", "count": 18, "every_days": 5, "additions": 70, "deletions": 15}],
+      "tree": ["requirements.txt", "app/main.py", "tests/test_api.py", "Dockerfile"],
+      "files": {"requirements.txt": "fastapi\nuvicorn\npydantic\npytest\n"},
+      "readme_size": 800
+    },
+    {
+      "id": 803, "name": "kaggle-titanic",
+      "languages": {"Jupyter Notebook": 50000},
+      "commits": [{"sha": "kt-1", "date": "2026-03-03T10:00:00+00:00", "additions": 900, "deletions": 0}],
+      "tree": ["titanic.ipynb", "requirements.txt"],
+      "files": {"requirements.txt": "pandas\nnumpy\n"},
+      "readme_size": 0
+    }
+  ]
+}

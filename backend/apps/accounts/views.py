@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.auth import authenticate
 from django.db import transaction
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -513,6 +513,10 @@ class GithubUnlinkView(APIView):
 # --- Me ---
 
 
+class MeDeleteSerializer(serializers.Serializer):
+    password = serializers.CharField(required=False, allow_blank=True, write_only=True)
+
+
 class MeView(APIView):
     permission_classes = (IsAuthenticated,)
 
@@ -566,3 +570,63 @@ class MeView(APIView):
                 setattr(profile, name, data[name])
             profile.save(update_fields=[*profile_fields, "updated_at"])
         return Response(MeSerializer(fresh_user(user)).data)
+
+    @extend_schema(
+        tags=["Profile"],
+        summary="Delete my account",
+        description=(
+            "Permanently deletes your account and personal data, and signs you out everywhere. "
+            "Send your password; accounts without one must have signed in with GitHub in the "
+            "last 10 minutes. Feedback you sent as a recruiter stays with its recipient, "
+            "anonymised. Admin accounts are removed by another admin."
+        ),
+        request=MeDeleteSerializer,
+        responses={204: None, **errors((400, "validation_error"), (403, "permission_denied"))},
+    )
+    def delete(self, request):
+        from rest_framework.exceptions import PermissionDenied, ValidationError
+
+        from . import privacy
+
+        user = request.user
+        if not privacy.is_deletable_role(user):
+            raise PermissionDenied("Admin accounts are removed by another admin.")
+        serializer = MeDeleteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        password = serializer.validated_data.get("password", "")
+        if user.has_usable_password():
+            if not user.check_password(password):
+                raise ValidationError({"password": ["Password is wrong."]})
+        elif not privacy.can_delete_without_password(user):
+            raise ValidationError(
+                {"password": ["Sign in with GitHub again, then delete within 10 minutes."]}
+            )
+        privacy.delete_account(user, request)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# --- Privacy (Kenya DPA 2019) --------------------------------------------------------------------
+
+
+class MeExportView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    @extend_schema(
+        tags=["Profile"],
+        summary="Export my data",
+        description="Everything SkillProof holds about you, as a JSON download (right of access).",
+        responses={200: {"type": "object"}, **errors((401, "not_authenticated"))},
+    )
+    def get(self, request):
+        from django.http import JsonResponse
+
+        from . import privacy
+
+        audit.record("privacy.export", actor=request.user, target=request.user, request=request)
+        response = JsonResponse(
+            privacy.export(fresh_user(request.user)), json_dumps_params={"indent": 2}
+        )
+        response["Content-Disposition"] = (
+            f'attachment; filename="skillproof-export-{request.user.public_id}.json"'
+        )
+        return response

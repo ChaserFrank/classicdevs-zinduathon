@@ -91,7 +91,7 @@ are skipped because they collide with ordinary words) or use a number that isn't
 Otherwise, and when there is no key, a timeout or a refusal, a deterministic three-sentence template
 is used. `summary_source` records which.
 
-## Worked example (fixture `amina-dev`, run on 2026-11-07)
+## Worked example (fixture `amina-demo`, run on 2026-11-07)
 
 | Repo | User commits | Span | Evidence | Shows |
 | --- | --- | --- | --- | --- |

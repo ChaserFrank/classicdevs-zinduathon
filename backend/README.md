@@ -5,7 +5,7 @@ public GitHub history into an explained skill card: proven skills, a Signal Scor
 five rule-based sub-scores, and the evidence behind every number. Recruiters search, shortlist and
 send feedback; job seekers receive it in-app, by email and by SMS (Thrivewave).
 
-> Status: **Phases 1–5** complete (foundation; auth; analysis; notifications; recruiting). See `docs/DECISIONS.md` and `../TESTING_LOG.md`.
+> Status: **Phases 1–6** complete. Phase 7 (hardening and deployment) is next. See `docs/DECISIONS.md` and `../TESTING_LOG.md`.
 
 ## Quick start (venv + Docker services) — recommended for development
 
@@ -57,8 +57,9 @@ apps/skills/       skill catalogue, aliases, dependency mappings (seeded)
 apps/analysis/     GitHub fetch, pure scoring rules, pipeline, analyses and cards
 apps/notifications/ inbox, preferences, email + Thrivewave SMS deliveries, webhooks
 apps/recruiting/   candidate search, jobs + match score, shortlists, feedback, profile views
+apps/adminpanel/   admin API, seed_demo, warm_demo
 tests/             mirrors apps/; fixtures/github/ for recorded GitHub API responses
-docs/              AUTH.md, SCORING.md, NOTIFICATIONS.md, DECISIONS.md, TESTING.md (more arrive with their phases)
+docs/              see the table below; DECISIONS.md, TESTING.md (more arrive with their phases)
 scripts/           record_fixtures.py (record real GitHub responses for tests)
 ```
 
@@ -68,3 +69,50 @@ scripts/           record_fixtures.py (record real GitHub responses for tests)
 - `Authorization: Bearer <access token>` (JWT).
 - Pagination `?page=&pageSize=` (max 100) → `{count, next, previous, results}`.
 - Errors are always `{code, message, fields?}`; every response carries `X-Request-ID`.
+
+## Demo data
+
+```bash
+python manage.py seed_demo            # idempotent; prints the accounts below; sends no email/SMS
+python manage.py warm_demo --logins octocat,another   # real GitHub analyses (needs GITHUB_TOKEN)
+```
+
+Password for every demo account: `SkillProof-demo-2026` (override with `DEMO_PASSWORD`).
+
+| Role | Email |
+| --- | --- |
+| Admin | `admin@skillproof.demo` |
+| Recruiter | `grace@savanna.demo`, `david@mawingu.demo` |
+| Recruiter (pending approval) | `pending@mawingu.demo` |
+| Job seekers | `amina@`, `brian@`, `chebet@`, `kipkorir@`, `njeri@`, `otieno@` + `jobseeker.demo` |
+
+Their analyses come from six fictional GitHub personas run through the real scoring pipeline
+(Signal Scores from 35 to 94), plus two open jobs, shortlists, feedback and profile views.
+
+### Walkthrough for judges (Swagger at `/api/v1/docs/`)
+
+1. `POST /auth/login` as `grace@savanna.demo`, then click **Authorize** and paste the `access` token.
+2. `GET /candidates?skills=python&minLabel=moderate`: proven Python developers, best first.
+3. `GET /candidates/amina-demo`: the skill card. Every number has a `reason`, every skill lists
+   the repos that prove it, and flags show what to ask about.
+4. `GET /jobs` then `GET /jobs/{id}/matches`: candidates ranked by match score.
+5. `POST /candidates/chebet-demo/feedback`: the job seeker gets it in-app (and by email/SMS when
+   configured). Try a rude message: it's held for admin review.
+6. Sign in as `pending@mawingu.demo`: every recruiter endpoint answers `recruiter_not_approved`.
+7. Sign in as `admin@skillproof.demo`: `GET /admin/stats`, approve the pending recruiter, read
+   `/admin/audit-log`.
+
+## Documentation
+
+| Doc | What's in it |
+| --- | --- |
+| [ARCHITECTURE](docs/ARCHITECTURE.md) | Components, apps, request flows |
+| [DATABASE](docs/DATABASE.md) | ER diagram, every table, constraints, normalisation |
+| [API](docs/API.md) | Conventions, error codes, endpoints by role, curl walkthrough |
+| [AUTH](docs/AUTH.md) | JWT, GitHub OAuth (setup + dev sign-in page), roles, approval |
+| [SCORING](docs/SCORING.md) | Every rule with formulas and a worked example |
+| [NOTIFICATIONS](docs/NOTIFICATIONS.md) | Events, templates, SMS length rule, Thrivewave adapter, webhooks |
+| [FRONTEND_INTEGRATION](docs/FRONTEND_INTEGRATION.md) | Env, types, fetch wrapper, sign-in, polling, error codes |
+| [SECURITY_AND_PRIVACY](docs/SECURITY_AND_PRIVACY.md) | Threats and controls, Kenya DPA |
+| [TESTING](docs/TESTING.md) | How to run, coverage, fixtures, what each test covers |
+| [DECISIONS](docs/DECISIONS.md) | Every significant choice and trade-off |
