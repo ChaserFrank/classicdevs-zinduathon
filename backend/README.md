@@ -23,6 +23,17 @@ make run                      # http://localhost:8000
 ```bash
 cd backend && cp .env.example .env && make dev
 ```
+## Start directly in Docker
+
+```bash
+cd backend 
+docker compose up --build
+```
+## Stop Docker and delete volume
+
+```bash 
+docker compose down -v
+```
 
 Web on :8000 (with a Celery worker and beat), Mailpit UI at http://localhost:8025. If a port is
 busy, set `WEB_HOST_PORT` (web) or `POSTGRES_HOST_PORT` (database, default 5433).
